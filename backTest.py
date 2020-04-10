@@ -44,7 +44,7 @@ def analyze(d):
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
     stopPrice = d['second'].close - 1
-    profitPrice = d['third'].close + 2
+    profitPrice = d['third'].close + 2.7
     logging.info('found a potential buy point, buy: %i, stop: %i, profit: %i', buyPrice, stopPrice, profitPrice)
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
@@ -116,14 +116,14 @@ def checkStopProfit(position, bar):
         logging.error('unhandled %s %s', position, bar)
     return amount, executed
 
-util.logToConsole(logging.FATAL)
+util.logToConsole(logging.INFO)
 ib = IB()
 ib.connect("localhost", 4002, clientId=3)
 
 contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
 #contract = Future('ES', '202006', 'GLOBEX')
 ib.qualifyContracts(contract)
-bars = bars = ib.reqHistoricalData(contract, endDateTime='', durationStr='5 D', barSizeSetting='1 min', whatToShow='TRADES', useRTH=True, formatDate=1)
+bars = bars = ib.reqHistoricalData(contract, endDateTime='', durationStr='1 D', barSizeSetting='1 min', whatToShow='TRADES', useRTH=True, formatDate=1)
 ib.sleep(1)
 anotateBars(bars)
 
@@ -158,7 +158,7 @@ for i in range(2, len(bars)-1):
     trade = analyze(data)
     #trade = analyze(data)
     if trade is not None:
-        logging.info('found a trade: %s', trade)
+        logging.info('found a trade: %s %s', trade, data)
         position, amount = checkTradeExecution(data['third'], trade)
         # check if the trade executed
         if position is not None:
