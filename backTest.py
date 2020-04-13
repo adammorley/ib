@@ -7,6 +7,14 @@ import sys
 
 from ib_insync import *
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("stopPrice", type=float)
+parser.add_argument("profitPrice", type=float)
+parser.add_argument("duration", type=int)
+parser.add_argument("endDate")
+args = parser.parse_args()
+
 def anotateBars(bars):
     for i in range(0, len(bars)):
         bars[i] = anotateBar(bars[i])
@@ -43,8 +51,8 @@ def analyze(d):
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
-    stopPrice = d['second'].close - 1
-    profitPrice = d['third'].close + 2.7
+    stopPrice = d['second'].close - args.stopPrice
+    profitPrice = d['third'].close + args.profitPrice
     logging.info('found a potential buy point, buy: %i, stop: %i, profit: %i', buyPrice, stopPrice, profitPrice)
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
@@ -116,14 +124,14 @@ def checkStopProfit(position, bar):
         logging.error('unhandled %s %s', position, bar)
     return amount, executed
 
-util.logToConsole(logging.INFO)
+util.logToConsole(logging.FATAL)
 ib = IB()
 ib.connect("localhost", 4002, clientId=3)
 
 contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
 #contract = Future('ES', '202006', 'GLOBEX')
 ib.qualifyContracts(contract)
-bars = bars = ib.reqHistoricalData(contract, endDateTime='', durationStr='1 D', barSizeSetting='1 min', whatToShow='TRADES', useRTH=True, formatDate=1)
+bars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting='1 min', whatToShow='TRADES', useRTH=True, formatDate=1)
 ib.sleep(1)
 anotateBars(bars)
 
