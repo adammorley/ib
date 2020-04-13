@@ -31,6 +31,9 @@ def getNextBar(t, ib):
     logging.debug('getting points every 250ms')
     bar = Bar()
     bar.open = t.marketPrice()
+    bar.close = bar.open
+    bar.low = bar.open
+    bar.high = bar.open
     for i in range(0, numberOfTicksInBar):
         m = t.marketPrice()
         if m > bar.high:
