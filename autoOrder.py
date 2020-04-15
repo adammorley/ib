@@ -8,12 +8,10 @@ import sys
 from ib_insync import *
 
 import argparse
-#parser = argparse.ArgumentParser()
-#parser.add_argument("stopPrice", type=float)
-#parser.add_argument("profitPrice", type=float)
-#args = parser.parse_args()
-stopPrice = 2.7
-profitPrice = 6
+parser = argparse.ArgumentParser()
+parser.add_argument("stopPrice", type=float)
+parser.add_argument("profitPrice", type=float)
+args = parser.parse_args()
 
 class Bar:
     open_: float = 0.0
@@ -80,13 +78,15 @@ def analyze(d):
         return None
     if not d['second'].barSize < 0.2 * d['first'].barSize:
         return None
+    if not d['third'].barSize > d['second'].barSize:
+        return None
 
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
-    stopPrice = d['second'].close - stopPrice
-    profitPrice = d['third'].close + profitPrice
-    logging.info('found a potential buy point, buy: %i, stop: %i, profit: %i', buyPrice, stopPrice, profitPrice)
+    stopPrice = d['second'].close - args.stopPrice
+    profitPrice = d['third'].close + args.profitPrice
+    logging.info('found a potential buy point, buy: %d, stop: %d, profit: %d', buyPrice, stopPrice, profitPrice)
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
         logging.debug('valid buy point, returning')
@@ -99,7 +99,7 @@ def analyze(d):
 
 # the back testing assumes the trade is placed in the next 1 minute window or canceled.
 def placeOrder(od):
-    o = bracketOrder(action='BUY', quantity=100, limitPrice=od.buyPrice, takeProfitPrice=od.profitPrice, stopLossPrice=od.stopPrice, outsideRth=True)
+    o = ib.bracketOrder(action='BUY', quantity=100, limitPrice=od.buyPrice, takeProfitPrice=od.profitPrice, stopLossPrice=od.stopPrice, outsideRth=True)
     t = ib.placeOrder(c, o)
     ib.sleep(0)
     logging.info('placed trade')
@@ -133,17 +133,16 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
         data['first'] = data['second']
         data['second'] = data['third']
     data['third'] = getNextBar(ticker, ib)
-    logging.debug(dumper.dump(data))
     orderdetails = analyze(data)
     if orderdetails is not None:
         trade = placeOrder(orderdetails)
         for i in range(0, 10):
             if not trade.isDone():
                 ib.sleep(0.100)
-        logging.info(dumper.dump(trade))
-        logging.info(ib.trades())
+        logging.info(trade)
     else:
         logging.info('did not find a trade')
+    logging.info(ib.trades())
 
 ib.cancelMktData(contract)
 ib.sleep(1)

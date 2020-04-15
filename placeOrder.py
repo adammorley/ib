@@ -1,3 +1,4 @@
+# in an ideal world, we'd re-factor this to use a bardata object.
 #!/usr/bin/python3
 
 import collections
@@ -62,6 +63,7 @@ def analyze(d):
         return {'buyPrice': buyPrice, 'stopPrice': stopPrice, 'profitPrice': profitPrice }
     return None
 
+# the back testing assumes the trade is placed in the next 1 minute window or canceled.
 def placeOrder(r):
     o = bracketOrder('BUY', 1, r['buyPrice'], r['profitPrice'], r['stopPrice'])
     t = ib.placeOrder(c, o)
@@ -100,6 +102,7 @@ for i in range(0, 10):
         logging.info('did not find a match to the pattern')
 
 
+# add time limit on trade execution
 if trade is not None:
     while not trade.isDone():
         logging.info('waiting for fills:', trade.remaining())
