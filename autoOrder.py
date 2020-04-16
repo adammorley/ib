@@ -9,9 +9,14 @@ from ib_insync import *
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("stopPrice", type=float)
 parser.add_argument("profitPrice", type=float)
 args = parser.parse_args()
+
+import random
+import string
+
+def randomString(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for x in range(size))
 
 class Bar:
     open_: float = 0.0
@@ -63,7 +68,6 @@ def anotateBar(bar):
 
 class OrderDetails:
     buyPrice: float = 0.0
-    stopPrice: float = 0.0
     profitPrice: float = 0.0
 
 def analyze(d):
@@ -84,25 +88,32 @@ def analyze(d):
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
-    stopPrice = d['second'].close - args.stopPrice
     profitPrice = d['third'].close + args.profitPrice
-    logging.info('found a potential buy point, buy: %d, stop: %d, profit: %d', buyPrice, stopPrice, profitPrice)
+    logging.info('found a potential buy point, buy: %d, stop: trailing1$, profit: %d', buyPrice, profitPrice)
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
         logging.debug('valid buy point, returning')
         od = OrderDetails()
         od.buyPrice = buyPrice
-        od.stopPrice = stopPrice
         od.profitPrice = profitPrice
         return od
     return None
 
 # the back testing assumes the trade is placed in the next 1 minute window or canceled.
-def placeOrder(od):
-    o = ib.bracketOrder(action='BUY', quantity=100, limitPrice=od.buyPrice, takeProfitPrice=od.profitPrice, stopLossPrice=od.stopPrice, outsideRth=True)
-    t = ib.placeOrder(c, o)
+def placeOrder(c, od):
+    bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=100, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
+    po = Order(orderId=ib.client.getReqId(), parentId=o.orderId, action='SELL', totalQuantity=100, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
+    tso = Order(orderId=ib.client.getReqId(), parentId=o.orderId, action='SELL', totalQuantity=100, orderType='TRAIL', auxPrice=1, tif='GTC', outsideRth=True)
+    oca = ib.oneCancelsAll([po, tso], ocaType=1, ocaGroup=randomString())
+    t = dict()
+    for o in [bo, po, tso]:
+        t[o] = ib.placeOrder(c, o)
     ib.sleep(0)
-    logging.info('placed trade')
+    n = 0
+    while n < 10 and t[bo].orderStatus.status != 'Filled':
+        n += 1
+        ib.sleep(1)
+    logging.info('placed orders')
     return t
 
 
@@ -133,16 +144,14 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
         data['first'] = data['second']
         data['second'] = data['third']
     data['third'] = getNextBar(ticker, ib)
-    orderdetails = analyze(data)
-    if orderdetails is not None:
-        trade = placeOrder(orderdetails)
-        for i in range(0, 10):
-            if not trade.isDone():
-                ib.sleep(0.100)
-        logging.info(trade)
+    orderDetails = analyze(data)
+    if orderDetails is not None:
+        trades = placeOrder(contract, orderDetails)
+        logging.debug(trades)
     else:
         logging.info('did not find a trade')
-    logging.info(ib.trades())
+    logging.info(ib.positions())
+    logging.info(ib.openOrders())
 
 ib.cancelMktData(contract)
 ib.sleep(1)
