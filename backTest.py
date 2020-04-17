@@ -13,6 +13,7 @@ parser.add_argument("stopPrice", type=float)
 parser.add_argument("profitPrice", type=float)
 parser.add_argument("duration", type=int)
 parser.add_argument("endDate")
+parser.add_argument("ticks")
 args = parser.parse_args()
 
 def anotateBars(bars):
@@ -45,7 +46,10 @@ def analyze(d):
         return None
     if not d['third'].color == 'G':
         return None
+    #if not d['second'].barSize < 0.2 * d['first'].barSize:
     if not d['second'].barSize < 0.2 * d['first'].barSize:
+        return None
+    if not d['second'].barSize < 0.5 * d['third'].barSize:
         return None
 
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
@@ -90,6 +94,7 @@ def checkPosition(bar, position):
         return True, amount
     else:
         logging.error('problem with position checking %s %s', position, bar)
+        return None, None
 
 #position is a type: purchasePrice, stopPrice, profitPrice
 # returns amount or None (error condition)
@@ -116,22 +121,22 @@ def checkStopProfit(position, bar):
         executed = False
         amount = None
     # unknown execution, assume loss
-    elif position['stopPrice'] > bar.low and position['profitPrice'] < bar.high:
+    elif position['stopPrice'] >= bar.low and position['profitPrice'] <= bar.high:
         logging.info('wonky: closing position: %s', position)
         executed = None
         amount = position['stopPrice'] - position['buyPrice']
     else:
-        logging.error('unhandled %s %s', position, bar)
+        logging.fatal('unhandled %s %s', position, bar)
     return amount, executed
 
 util.logToConsole(logging.FATAL)
 ib = IB()
-ib.connect("localhost", 4002, clientId=3)
+ib.connect("localhost", 4002, clientId=2)
 
-contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
-#contract = Future('ES', '202006', 'GLOBEX')
+#contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
+contract = Future('ES', '202006', 'GLOBEX')
 ib.qualifyContracts(contract)
-bars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting='1 min', whatToShow='TRADES', useRTH=True, formatDate=1)
+bars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.ticks, whatToShow='TRADES', useRTH=True, formatDate=1)
 ib.sleep(1)
 anotateBars(bars)
 
@@ -154,11 +159,11 @@ for i in range(2, len(bars)-1):
         # wonky use of executed vs amount
         closed, amount = checkPosition(data['third'], position)
         if closed:
-            logging.error('closed a position: %i %s %s', amount, position, data['third'])
+            logging.error('closed a position: %i %r %s %s', amount, closed, position, data['third'])
             totalGainLoss += amount
-            totalFundsInPlay -= position['buyPrice']
             if totalFundsInPlay > maxFundsInPlay:
                 maxFundsInPlay = totalFundsInPlay
+            totalFundsInPlay -= position['buyPrice']
             positions.remove(position)
         # position stays, no changes
 
@@ -178,6 +183,7 @@ for i in range(2, len(bars)-1):
         logging.info('totalFundsInPlay: %i', totalFundsInPlay)
 
 r = 0
+totalGainLoss=totalGainLoss*50 # es00 futures ticks are 12.5 per tick
 if maxFundsInPlay > 0:
     r = totalGainLoss/maxFundsInPlay*100
 logging.fatal('totalGainLoss: %i, maxFundsInPlay: %i, return: %i', totalGainLoss, maxFundsInPlay, r)

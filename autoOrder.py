@@ -9,11 +9,23 @@ from ib_insync import *
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("profitPrice", type=float)
+parser.add_argument('--profitPrice', type=float, required=True)
+parser.add_argument('--security', required=True)
+parser.add_argument('--stopPrice', type=float, required=True)
+parser.add_argument('--trail', action='store_true', required=False)
 args = parser.parse_args()
 
 import random
 import string
+
+def getContract():
+    if args.security == 'TQQQ':
+        return Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
+    elif args.security == 'ES00':
+        return Future('ES', '202006', 'GLOBEX')
+    else:
+        logging.fatal('no contract specified')
+        sys.exit(1)
 
 def randomString(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -69,6 +81,7 @@ def anotateBar(bar):
 class OrderDetails:
     buyPrice: float = 0.0
     profitPrice: float = 0.0
+    stopPrice: float = 0.0
 
 def analyze(d):
     if d['first'].color == 'X' or d['second'].color == 'X' or d['third'].color == 'X':
@@ -87,13 +100,19 @@ def analyze(d):
 
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
+    if args.trail:
+        stopPrice = args.stopPrice
+    else:
+        stopPrice = d['second'].close - args.stopPrice
     buyPrice = d['third'].close
     profitPrice = d['third'].close + args.profitPrice
-    logging.info('found a potential buy point, buy: %d, stop: trailing1$, profit: %d', buyPrice, profitPrice)
+    logging.info('found a potential buy point, buy: %d, stop: %d, profit: %d', buyPrice, stopPrice, profitPrice)
+
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
         logging.debug('valid buy point, returning')
         od = OrderDetails()
+        od.stopPrice = stopPrice
         od.buyPrice = buyPrice
         od.profitPrice = profitPrice
         return od
@@ -102,11 +121,14 @@ def analyze(d):
 # the back testing assumes the trade is placed in the next 1 minute window or canceled.
 def placeOrder(c, od):
     bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=100, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
-    po = Order(orderId=ib.client.getReqId(), parentId=o.orderId, action='SELL', totalQuantity=100, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
-    tso = Order(orderId=ib.client.getReqId(), parentId=o.orderId, action='SELL', totalQuantity=100, orderType='TRAIL', auxPrice=1, tif='GTC', outsideRth=True)
-    oca = ib.oneCancelsAll([po, tso], ocaType=1, ocaGroup=randomString())
+    po = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=100, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
+    if args.trail:
+        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=100, orderType='TRAIL', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
+    else:
+        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=100, orderType='STP', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
+    oca = ib.oneCancelsAll([po, so], ocaType=1, ocaGroup=randomString())
     t = dict()
-    for o in [bo, po, tso]:
+    for o in [bo, po, so]:
         t[o] = ib.placeOrder(c, o)
     ib.sleep(0)
     n = 0
@@ -128,6 +150,7 @@ if not ib.isConnected():
     sys.exit(1)
 
 logging.info('connected, qualifying contract')
+contract = getContract()
 contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
 ib.qualifyContracts(contract)
 ticker = ib.reqMktData(contract, '', False, False)
