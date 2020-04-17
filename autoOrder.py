@@ -12,6 +12,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--profitPrice', type=float, required=True)
 parser.add_argument('--security', required=True)
 parser.add_argument('--stopPrice', type=float, required=True)
+parser.add_argument('--qty', type=int, required=True)
+parser.add_argument('--ops', type=int, required=True) # number of open positions to maintain
 parser.add_argument('--trail', action='store_true', required=False)
 args = parser.parse_args()
 
@@ -120,12 +122,12 @@ def analyze(d):
 
 # the back testing assumes the trade is placed in the next 1 minute window or canceled.
 def placeOrder(c, od):
-    bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=100, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
-    po = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=100, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
+    bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=qty, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
+    po = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=qty, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
     if args.trail:
-        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=100, orderType='TRAIL', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
+        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=qty, orderType='TRAIL', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
     else:
-        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=100, orderType='STP', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
+        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=qty, orderType='STP', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
     oca = ib.oneCancelsAll([po, so], ocaType=1, ocaGroup=randomString())
     t = dict()
     for o in [bo, po, so]:
@@ -169,8 +171,15 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     data['third'] = getNextBar(ticker, ib)
     orderDetails = analyze(data)
     if orderDetails is not None:
-        trades = placeOrder(contract, orderDetails)
-        logging.debug(trades)
+        positions = ib.positions()
+        ib.sleep(0)
+        for p in positions:
+            if p.contract == contract and p.position >= args.qty * args.ops:
+                logging.info('passing on trade as max positions already open')
+                logging.info(orderDetails)
+            else:
+                trades = placeOrder(contract, orderDetails)
+                logging.debug(trades)
     else:
         logging.info('did not find a trade')
     logging.info(ib.positions())
