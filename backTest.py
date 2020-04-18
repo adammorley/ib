@@ -14,7 +14,18 @@ parser.add_argument("profitPrice", type=float)
 parser.add_argument("duration", type=int)
 parser.add_argument("endDate")
 parser.add_argument("ticks")
+parser.add_argument('symbol')
+parser.add_argument('conId')
 args = parser.parse_args()
+
+def contractLookup(symbol, conId):
+    if symbol == 'TQQQ':
+        return Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
+    elif symbol == 'ES':
+        return Contract(symbol='ES', exchange='GLOBEX', currency='USD', conId=conId)
+    else:
+        logging.fatal('unsupported contract')
+        sys.exit(1)
 
 def anotateBars(bars):
     for i in range(0, len(bars)):
@@ -131,11 +142,13 @@ def checkStopProfit(position, bar):
 
 util.logToConsole(logging.FATAL)
 ib = IB()
-ib.connect("localhost", 4002, clientId=2)
+ib.connect("localhost", 4002, clientId=3)
 
-#contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
-contract = Future('ES', '202006', 'GLOBEX')
-ib.qualifyContracts(contract)
+contract = contractLookup(args.symbol, args.conId)
+qc = ib.qualifyContracts(contract)
+if len(qc) < 1:
+    logging.fatal('could not validate contract')
+    sys.exit(1)
 bars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.ticks, whatToShow='TRADES', useRTH=True, formatDate=1)
 ib.sleep(1)
 anotateBars(bars)
