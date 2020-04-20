@@ -142,7 +142,7 @@ def checkStopProfit(position, bar):
 
 util.logToConsole(logging.FATAL)
 ib = IB()
-ib.connect("localhost", 4002, clientId=3)
+ib.connect("localhost", 4002, clientId=2)
 
 contract = contractLookup(args.symbol, args.conId)
 qc = ib.qualifyContracts(contract)
