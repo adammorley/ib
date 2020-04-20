@@ -13,8 +13,9 @@ parser.add_argument('--profitPrice', type=float, required=True)
 parser.add_argument('--security', required=True)
 parser.add_argument('--stopPrice', type=float, required=True)
 parser.add_argument('--qty', type=int, required=True)
-parser.add_argument('--ops', type=int, required=True) # number of open positions to maintain
+parser.add_argument('--openpos', type=int, required=True) # number of open positions to maintain
 parser.add_argument('--trail', action='store_true', required=False)
+parser.add_argument('--esLocal', required=False)
 args = parser.parse_args()
 
 import random
@@ -22,9 +23,9 @@ import string
 
 def getContract():
     if args.security == 'TQQQ':
-        return Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
+        return Stock(symbol='TQQQ', exchange='SMART', currency='USD', primaryExchange='NASDAQ')
     elif args.security == 'ES00':
-        return Future('ES', '202006', 'GLOBEX')
+        return Contract(secType='FUT', symbol='ES', localSymbol=args.esLocal, exchange='GLOBEX', currency='USD')
     else:
         logging.fatal('no contract specified')
         sys.exit(1)
@@ -137,6 +138,7 @@ def placeOrder(c, od):
     while n < 10 and t[bo].orderStatus.status != 'Filled':
         n += 1
         ib.sleep(1)
+        logging.info('waiting on an order fill')
     logging.info('placed orders')
     return t
 
@@ -145,7 +147,7 @@ startTime = datetime.datetime.utcnow()
 
 util.logToConsole(logging.INFO)
 ib = IB()
-ib.connect("localhost", 4002, clientId=3)
+ib.connect("localhost", 4002, clientId=1)
 ib.sleep(1)
 if not ib.isConnected():
     logging.fatal('did not connect.')
@@ -153,14 +155,12 @@ if not ib.isConnected():
 
 logging.info('connected, qualifying contract')
 contract = getContract()
-contract = Stock('TQQQ', 'SMART', 'USD', primaryExchange='NASDAQ')
 ib.qualifyContracts(contract)
 ticker = ib.reqMktData(contract, '', False, False)
 ib.sleep(1)
 
 logging.info('running trade loop')
 data = {'first':None, 'second':None, 'third':None}
-trade = None
 while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     if data['first'] is None and data['second'] is None:
         data['first'] = getNextBar(ticker, ib)
@@ -173,17 +173,18 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     if orderDetails is not None:
         positions = ib.positions()
         ib.sleep(0)
+        makeTrade = True
         for p in positions:
-            if p.contract == contract and p.position >= args.qty * args.ops:
+            if p.contract == contract and p.position >= args.qty * args.openpos:
                 logging.info('passing on trade as max positions already open')
                 logging.info(orderDetails)
-            else:
-                trades = placeOrder(contract, orderDetails)
-                logging.debug(trades)
+                makeTrade = False
+        if makeTrade:
+            trades = placeOrder(contract, orderDetails)
+            logging.debug(trades)
+            logging.info(ib.positions())
     else:
         logging.info('did not find a trade')
-    logging.info(ib.positions())
-    logging.info(ib.openOrders())
 
 ib.cancelMktData(contract)
 ib.sleep(1)
