@@ -123,12 +123,12 @@ def analyze(d):
 
 # the back testing assumes the trade is placed in the next 1 minute window or canceled.
 def placeOrder(c, od):
-    bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=qty, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
-    po = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=qty, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
+    bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=args.qty, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
+    po = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=args.qty, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
     if args.trail:
-        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=qty, orderType='TRAIL', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
+        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=args.qty, orderType='TRAIL', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
     else:
-        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=qty, orderType='STP', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
+        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=args.qty, orderType='STP', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
     oca = ib.oneCancelsAll([po, so], ocaType=1, ocaGroup=randomString())
     t = dict()
     for o in [bo, po, so]:
