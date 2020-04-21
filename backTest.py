@@ -15,13 +15,14 @@ from market import rand
 
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument('--debug', action='store_true', default=None)
 parser.add_argument("--duration", default=5, type=int)
 parser.add_argument("--endDate", default='', type=str)
 parser.add_argument("--tickSize", default='1 min', type=str)
 parser.add_argument('--symbol', required=True)
 parser.add_argument('--conId')
-parser.add_argument('--profitTarget', default=None, type=int)
-parser.add_argument('--stopTarget', default=None, type=int)
+parser.add_argument('--profitTarget', default=None, type=float)
+parser.add_argument('--stopTarget', default=None, type=float)
 args = parser.parse_args()
 
 def getConfig(symbol):
@@ -120,9 +121,14 @@ def checkStopProfit(position, bar):
         logging.fatal('unhandled %s %s', position, bar)
     return amount, executed
 
-util.logToConsole(logging.FATAL)
+if args.debug is not None:
+    util.logToConsole(logging.DEBUG)
+else:
+    util.logToConsole(logging.FATAL)
+
 conf = getConfig(args.symbol)
 conf = overrideConfig(conf)
+
 ib = IB()
 ib.connect("localhost", 4002, clientId=rand.Int())
 
