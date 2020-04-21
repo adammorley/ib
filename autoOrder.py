@@ -1,193 +1,86 @@
 #!/usr/bin/python3
 
 import datetime
-import dumper
 import logging
 import sys
+import yaml
 
 from ib_insync import *
 
+from market import bars
+from market import order
+from market import rand
+from market import trade
+
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--profitPrice', type=float, required=True)
-parser.add_argument('--security', required=True)
-parser.add_argument('--stopPrice', type=float, required=True)
-parser.add_argument('--qty', type=int, required=True)
-parser.add_argument('--openpos', type=int, required=True) # number of open positions to maintain
-parser.add_argument('--trail', action='store_true', required=False)
-parser.add_argument('--esLocal', required=False)
+parser.add_argument('--symbol', required=True)
 args = parser.parse_args()
 
-import random
-import string
-
 def getContract():
-    if args.security == 'TQQQ':
-        return Stock(symbol='TQQQ', exchange='SMART', currency='USD', primaryExchange='NASDAQ')
-    elif args.security == 'ES00':
+    if args.symbol == 'TQQQ':
+        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
+    elif args.symbol == 'SQQQ':
+        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
+    elif args.symbol == 'ES00':
         return Contract(secType='FUT', symbol='ES', localSymbol=args.esLocal, exchange='GLOBEX', currency='USD')
     else:
-        logging.fatal('no contract specified')
+        logging.fatal('no security specified')
         sys.exit(1)
 
-def randomString(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for x in range(size))
-
-class Bar:
-    open_: float = 0.0
-    close: float = 0.0
-    high: float = 0.0
-    low: float = 9223372036854775807.
-    barSize: float = 0.0
-    lineSize: float = 0.0
-    color: str = 'X'
-
-numberOfTicksInBar = 240
-
-# get the next minute's bar
-def getNextBar(t, ib):
-    logging.debug('getting points every 250ms')
-    bar = Bar()
-    bar.open = t.marketPrice()
-    bar.close = bar.open
-    bar.low = bar.open
-    bar.high = bar.open
-    for i in range(0, numberOfTicksInBar):
-        m = t.marketPrice()
-        if m > bar.high:
-            bar.high = m
-        elif m < bar.low:
-            bar.low = m
-        ib.sleep(0.250)
-    bar.close = t.marketPrice()
-    return anotateBar( cleanUpBar(bar) )
-
-def cleanUpBar(bar):
-    logging.debug('cleaning up bar')
-    if bar.close < bar.low:
-        bar.low = bar.close
-    elif bar.close > bar.high:
-        bar.high = bar.close
-    return bar
-
-def anotateBar(bar):
-    bar.barSize = abs(bar.open - bar.close)
-    bar.lineSize = abs(bar.high - bar.low)
-    if bar.open < bar.close:
-        bar.color = 'G'
-    elif bar.close < bar.open:
-        bar.color = 'R'
-    elif bar.close == bar.open and bar.high != bar.low:
-        bar.color = 'G'
-    return bar
-
-class OrderDetails:
-    buyPrice: float = 0.0
-    profitPrice: float = 0.0
-    stopPrice: float = 0.0
-
-def analyze(d):
-    if d['first'].color == 'X' or d['second'].color == 'X' or d['third'].color == 'X':
-        logging.debug('got a partial bar')
-        return None
-    if not d['first'].color == 'G':
-        return None
-    if not d['second'].color == 'R':
-        return None
-    if not d['third'].color == 'G':
-        return None
-    if not d['second'].barSize < 0.2 * d['first'].barSize:
-        return None
-    if not d['third'].barSize > d['second'].barSize:
-        return None
-
-    #buyPrice = d['third'].open + 0.5 * d['third'].barSize
-    #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
-    if args.trail:
-        stopPrice = args.stopPrice
-    else:
-        stopPrice = d['second'].close - args.stopPrice
-    buyPrice = d['third'].close
-    profitPrice = d['third'].close + args.profitPrice
-    logging.info('found a potential buy point, buy: %d, stop: %d, profit: %d', buyPrice, stopPrice, profitPrice)
-
-    #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
-    if True:
-        logging.debug('valid buy point, returning')
-        od = OrderDetails()
-        od.stopPrice = stopPrice
-        od.buyPrice = buyPrice
-        od.profitPrice = profitPrice
-        return od
-    return None
-
-# the back testing assumes the trade is placed in the next 1 minute window or canceled.
-def placeOrder(c, od):
-    bo = Order(orderId=ib.client.getReqId(), transmit=False, action='BUY', totalQuantity=args.qty, orderType='LMT', lmtPrice=od.buyPrice, tif='DAY', outsideRth=True)
-    po = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=args.qty, orderType='LMT', lmtPrice=od.profitPrice, tif='GTC', outsideRth=True)
-    if args.trail:
-        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=args.qty, orderType='TRAIL', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
-    else:
-        so = Order(orderId=ib.client.getReqId(), parentId=bo.orderId, action='SELL', totalQuantity=args.qty, orderType='STP', auxPrice=od.stopPrice, tif='GTC', outsideRth=True)
-    oca = ib.oneCancelsAll([po, so], ocaType=1, ocaGroup=randomString())
-    t = dict()
-    for o in [bo, po, so]:
-        t[o] = ib.placeOrder(c, o)
-    ib.sleep(0)
-    n = 0
-    while n < 10 and t[bo].orderStatus.status != 'Filled':
-        n += 1
-        ib.sleep(1)
-        logging.info('waiting on an order fill')
-    logging.info('placed orders')
-    return t
-
+with open('conf/qqq', 'r') as f:
+    conf = yaml.load(f)
 
 startTime = datetime.datetime.utcnow()
 
 util.logToConsole(logging.INFO)
-ib = IB()
-ib.connect("localhost", 4002, clientId=1)
-ib.sleep(1)
-if not ib.isConnected():
+ibc = IB()
+ibc.connect("localhost", 4002, clientId=rand.Int())
+ibc.sleep(1)
+if not ibc.isConnected():
     logging.fatal('did not connect.')
     sys.exit(1)
 
 logging.info('connected, qualifying contract')
 contract = getContract()
-ib.qualifyContracts(contract)
-ticker = ib.reqMktData(contract, '', False, False)
-ib.sleep(1)
+qc = ibc.qualifyContracts(contract)
+if len(qc) != 1 or qc[0].symbol != args.symbol:
+    logging.fatal('could not validate contract: %s', qc)
+    sys.exit(1)
+
+ticker = ibc.reqMktData(contract, '', False, False)
+ibc.sleep(1)
 
 logging.info('running trade loop')
 data = {'first':None, 'second':None, 'third':None}
 while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     if data['first'] is None and data['second'] is None:
-        data['first'] = getNextBar(ticker, ib)
-        data['second'] = getNextBar(ticker, ib)
+        data['first'] = bars.GetNextBar(ticker, ibc.sleep)
+        data['second'] = bars.GetNextBar(ticker, ibc.sleep)
     else:
         data['first'] = data['second']
         data['second'] = data['third']
-    data['third'] = getNextBar(ticker, ib)
-    orderDetails = analyze(data)
+    data['third'] = bars.GetNextBar(ticker, ibc.sleep)
+    orderDetails = order.Analyze(data, conf)
     if orderDetails is not None:
-        positions = ib.positions()
-        ib.sleep(0)
+        positions = ibc.positions()
+        ibc.sleep(0)
         makeTrade = True
         for p in positions:
-            if p.contract == contract and p.position >= args.qty * args.openpos:
+            if p.contract == contract and p.position >= conf.qty * conf.openPositions:
                 logging.info('passing on trade as max positions already open')
                 logging.info(orderDetails)
                 makeTrade = False
         if makeTrade:
-            trades = placeOrder(contract, orderDetails)
+            orders = order.CreateOrders(contract, orderDetails, conf)
+            trades = trade.PlaceTrade(contract, orders, ibc)
             logging.debug(trades)
-            logging.info(ib.positions())
+            logging.info(ibc.positions())
     else:
         logging.info('did not find a trade')
 
-ib.cancelMktData(contract)
-ib.sleep(1)
-ib.disconnect()
+ibc.cancelMktData(contract)
+ibc.sleep(1)
+ibc.disconnect()
 
 sys.exit(0)
