@@ -19,7 +19,7 @@ parser.add_argument('--debug', action='store_true', default=None)
 parser.add_argument("--duration", default=5, type=int)
 parser.add_argument("--endDate", default='', type=str)
 parser.add_argument("--tickSize", default='1 min', type=str)
-parser.add_argument('--symbol', required=True)
+parser.add_argument('--symbol', required=True, type=str)
 parser.add_argument('--conId')
 parser.add_argument('--profitTarget', default=None, type=float)
 parser.add_argument('--stopTarget', default=None, type=float)
@@ -140,7 +140,7 @@ if len(qc) < 1:
 useRth = False if conf.outsideRth else True
 histBars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=1)
 ib.sleep(1)
-bars = anotateBars(histBars)
+newBars = anotateBars(histBars)
 
 data = {'first':None, 'second':None, 'third':None}
 trade = None
@@ -148,13 +148,13 @@ positions = []
 totalGainLoss = 0
 totalFundsInPlay = 0
 maxFundsInPlay = 0
-data['first'] = getNextBar(bars, 0)
-data['second'] = getNextBar(bars, 1)
-for i in range(2, len(bars)-1):
+data['first'] = getNextBar(newBars, 0)
+data['second'] = getNextBar(newBars, 1)
+for i in range(2, len(newBars)-1):
     if i > 3:
         data['first'] = data['second']
         data['second'] = data['third']
-    data['third'] = getNextBar(bars, i)
+    data['third'] = getNextBar(newBars, i)
 
     # first, see if any positions changed
     for position in positions:
