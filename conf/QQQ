@@ -6,3 +6,4 @@ locPercent: 6.0
 trail: true
 qty: 100
 openPositions: 5
+outsideRth: true
