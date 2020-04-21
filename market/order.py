@@ -66,7 +66,7 @@ def CreateBracketOrder(contract, orderDetails):
     orders = Orders()
     orders.buyOrder = Order(transmit=False,
                         action='BUY',
-                        totalQuantity=conf.qty,
+                        totalQuantity=orderDetails.config.qty,
                         orderType='LMT',
                         lmtPrice=orderDetails.buyPrice,
                         tif='DAY',
