@@ -12,13 +12,9 @@ def PlaceBracketTrade(contract, orders, ibc):
     # the order matters here because of the transmit flat
     #   see https://interactivebrokers.github.io/tws-api/bracket_order.html
     trades = dict()
-    if orders.locOrder:
-        for order in [orders.buyOrder, orders.profitOrder, orders.locOrder, orders.stopOrder]:
-            trades[order] = ibc.placeOrder(contract, order)
-        ibc.sleep(0)
-    else:
-        logging.fatal('must have loc')
-        sys.exit(1)
+    for order in [orders.buyOrder, orders.profitOrder, orders.locOrder, orders.stopOrder]:
+        trades[order] = ibc.placeOrder(contract, order)
+    ibc.sleep(0)
 
     n = 0
     while n < 10 and trades[orders.buyOrder].orderStatus.status != 'Filled':
