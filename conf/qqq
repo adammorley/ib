@@ -1,0 +1,6 @@
+---
+profitPrice: 2
+stopPrice: 1
+trail: true
+qty: 100
+openPositions: 5
