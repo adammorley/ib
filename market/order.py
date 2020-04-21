@@ -53,19 +53,19 @@ class Orders:
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
 
-def calculateProfitTarget(od):
+def calculateProfitPrice(od):
     if od.config.percents:
         return od.buyPrice * (100.0 + od.profitPercent)/100.0
     else:
         return od.buyPrice + od.config.profitTarget
 
-def calculateLocTarget(od):
+def calculateLocPrice(od):
     if od.config.percents:
         return od.buyPrice * (100.0 + od.locPercent)/100.0
     else:
         return od.buyPrice + od.config.locTarget
 
-def calculateStopTarget(od):
+def calculateStopPrice(od):
     if od.config.percents:
         return od.buyPrice * (100.0 - od.stopPercent)/100.0
     else:
@@ -81,7 +81,7 @@ def CreateBracketOrder(contract, orderDetails):
                         lmtPrice=orderDetails.buyPrice,
                         tif='DAY',
                         outsideRth=orderDetails.config.outsideRth)
-    profitPrice = calculateProfitTarget(od)
+    profitPrice = calculateProfitPrice(od)
     orders.profitOrder = Order(transmit=False,
                         action='SELL',
                         totalQuantity=orderDetails.config.qty,
@@ -89,7 +89,7 @@ def CreateBracketOrder(contract, orderDetails):
                         lmtPrice=profitPrice,
                         tif='GTC',
                         outsideRth=orderDetails.config.outsideRth)
-    locPrice = calculateLocTarget(od)
+    locPrice = calculateLocPrice(od)
     orders.locOrder = Order(transmit=False,
                         action='SELL',
                         totalQuantity=orderDetails.config.qty,
@@ -97,7 +97,7 @@ def CreateBracketOrder(contract, orderDetails):
                         lmtPrice=locPrice,
                         tif='DAY',
                         outsideRth=orderDetails.config.outsideRth)
-    stopPrice = calculateStopTarget(od)
+    stopPrice = calculateStopPrice(od)
     if orderDetails.config.trail:
         orders.stopOrder = Order(transmit=True,
                             action='SELL',

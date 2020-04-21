@@ -171,7 +171,6 @@ for i in range(2, len(newBars)-1):
 
     # analyze the trade for execution
     trade = order.Analyze(data, conf)
-    #trade = analyze(data)
     if trade is not None:
         logging.info('found an order: %s %s', trade, data)
         if len(positions) < trade.config.openPositions:
