@@ -75,7 +75,7 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
                 logging.info(orderDetails)
                 makeTrade = False
         if makeTrade:
-            orders = order.CreateBracketOrder(contract, orderDetails, conf)
+            orders = order.CreateBracketOrder(contract, orderDetails)
             trades = trade.PlaceBracketTrade(contract, orders, ibc)
             logging.debug(trades)
             logging.info(ibc.positions())

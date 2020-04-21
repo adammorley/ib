@@ -25,7 +25,7 @@ def Analyze(d, conf):
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
-    logging.info('found a potential buy point: %d, %s', buyPrice, conf)
+    logging.info('found a potential buy point: %d, %s', buyPrice, conf.__dict__)
 
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
@@ -62,11 +62,11 @@ def calculateStopTarget(od):
         return od.config.stopPrice
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
-def CreateBracketOrder(contract, orderDetails, config):
+def CreateBracketOrder(contract, orderDetails):
     orders = Orders()
     orders.buyOrder = Order(transmit=False,
                         action='BUY',
-                        totalQuantity=config.qty,
+                        totalQuantity=conf.qty,
                         orderType='LMT',
                         lmtPrice=orderDetails.buyPrice,
                         tif='DAY',
@@ -74,25 +74,24 @@ def CreateBracketOrder(contract, orderDetails, config):
     profitPrice = calculateProfitTarget(od)
     orders.profitOrder = Order(transmit=False,
                         action='SELL',
-                        totalQuantity=config.qty,
+                        totalQuantity=orderDetails.config.qty,
                         orderType='LMT',
                         lmtPrice=profitPrice,
                         tif='GTC',
                         outsideRth=True)
-    if config.locPercent:
-        locPrice = calculateLocTarget(od)
-        orders.locOrder = Order(transmit=False,
-                            action='SELL',
-                            totalQuantity=config.qty,
-                            orderType='LOC',
-                            lmtPrice=locPrice,
-                            tif='DAY',
-                            outsideRth=true)
+    locPrice = calculateLocTarget(od)
+    orders.locOrder = Order(transmit=False,
+                        action='SELL',
+                        totalQuantity=orderDetails.config.qty,
+                        orderType='LOC',
+                        lmtPrice=locPrice,
+                        tif='DAY',
+                        outsideRth=true)
     stopPrice = calculateStopTarget(od)
-    if config.trail:
+    if orderDetails.config.trail:
         orders.stopOrder = Order(transmit=True,
                             action='SELL',
-                            totalQuantity=config.qty,
+                            totalQuantity=orderDetails.config.qty,
                             orderType='TRAIL',
                             auxPrice=stopPrice,
                             tif='GTC',
@@ -100,7 +99,7 @@ def CreateBracketOrder(contract, orderDetails, config):
     else:
         orders.stopOrder = Order(transmit=True,
                             action='SELL',
-                            totalQuantity=config.qty,
+                            totalQuantity=orderDetails.config.qty,
                             orderType='STP',
                             auxPrice=stopPrice,
                             tif='GTC',
