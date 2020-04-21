@@ -36,7 +36,7 @@ def getContract():
 startTime = datetime.datetime.utcnow()
 util.logToConsole(logging.INFO)
 conf = getConfig()
-logging.info('config %s', conf.__dict__)
+logging.info('config %s', conf)
 ibc = IB()
 ibc.connect("localhost", 4002, clientId=rand.Int())
 ibc.sleep(1)

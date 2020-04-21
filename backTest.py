@@ -4,19 +4,36 @@ import collections
 import dumper
 import logging
 import sys
+import yaml
 
 from ib_insync import *
 
+from market import bars
+from market import config
+from market import order
+from market import rand 
+
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("stopPrice", type=float)
-parser.add_argument("profitPrice", type=float)
-parser.add_argument("duration", type=int)
-parser.add_argument("endDate")
-parser.add_argument("ticks")
-parser.add_argument('symbol')
-parser.add_argument('conId')
+parser.add_argument("--duration", default=5, type=int)
+parser.add_argument("--endDate", default='', type=str)
+parser.add_argument("--tickSize", default='1 min', type=str)
+parser.add_argument('--symbol', required=True)
+parser.add_argument('--conId')
+parser.add_argument('--profitTarget', default=None, type=int)
+parser.add_argument('--stopTarget', default=None, type=int)
 args = parser.parse_args()
+
+def getConfig(symbol):
+    with open('conf/' + symbol, 'r') as f:
+        return config.ProcessConfig(yaml.load(f))
+
+def overrideConfig(conf):
+    if args.profitTarget is not None:
+        conf.profitTarget = args.profitTarget
+    if args.stopTarget is not None:
+        conf.stopTarget = args.stopTarget
+    return conf
 
 def contractLookup(symbol, conId):
     if symbol == 'TQQQ':
@@ -27,74 +44,34 @@ def contractLookup(symbol, conId):
         logging.fatal('unsupported contract')
         sys.exit(1)
 
-def anotateBars(bars):
-    for i in range(0, len(bars)):
-        bars[i] = anotateBar(bars[i])
-    return bars
 
-def anotateBar(bar):
-    bar.barSize = abs(bar.open - bar.close)
-    bar.lineSize = abs(bar.high - bar.low)
-    if bar.open < bar.close:
-        bar.color = 'G'
-    elif bar.close < bar.open:
-        bar.color = 'R'
-    elif bar.close == bar.open and bar.high != bar.low:
-        bar.color = 'G'
-    else:
-        bar.color = 'X'
+def anotateBars(histBars):
+    newBars = []
+    for i in range(0, len(histBars)):
+        newBars.append(makeBar(histBars[i]))
+        newBars[i] = bars.AnotateBar(newBars[i])
+    return newBars
+
+def makeBar(histBar):
+    bar = bars.Bar()
+    bar.open = histBar.open
+    bar.close = histBar.close
+    bar.high = histBar.high
+    bar.low = histBar.low
     return bar
 
+def getNextBar(newBars, index):
+    return newBars[index]
 
-#def analyze(d, bar):
-def analyze(d):
-    if d['first'].color == 'X' or d['second'].color == 'X' or d['third'].color == 'X':
-        logging.error('got a partial bar')
-        return None
-    if not d['first'].color == 'G':
-        return None
-    if not d['second'].color == 'R':
-        return None
-    if not d['third'].color == 'G':
-        return None
-    #if not d['second'].barSize < 0.2 * d['first'].barSize:
-    if not d['second'].barSize < 0.2 * d['first'].barSize:
-        return None
-    if not d['second'].barSize < 0.5 * d['third'].barSize:
-        return None
-
-    #buyPrice = d['third'].open + 0.5 * d['third'].barSize
-    #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
-    buyPrice = d['third'].close
-    stopPrice = d['second'].close - args.stopPrice
-    profitPrice = d['third'].close + args.profitPrice
-    logging.info('found a potential buy point, buy: %i, stop: %i, profit: %i', buyPrice, stopPrice, profitPrice)
-    #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
-    if True:
-        logging.info('valid buy point, returning')
-        return {'buyPrice': buyPrice, 'stopPrice': stopPrice, 'profitPrice': profitPrice }
-    return None
-
-def getNextBar(bars, index):
-    return bars[index]
-
-# returns true/false on execution and potential gain/loss
-# returns position and gain/loss
+# only used to check the third bar for if the order bought/sold in the third bar during "blur"
 def checkTradeExecution(bar, trade):
-    if trade['buyPrice'] < bar.high and trade['buyPrice'] > bar.low:
-        closed, amount = checkPosition(bar, trade)
-        if not closed:
-            return trade, None
-        elif closed:
-            return None, amount
-        else:
-            logging.error('problem with trade execution: %s %s', bar, trade)
-            logging.error(bar, trade)
+    if trade.buyPrice <= bar.high and trade.buyPrice - trade.config.stopTarget >= bar.low:
+        return None, (-1 * trade.config.stopTarget)
     else:
-        return None, None
+        return trade, None
 
-# check if a position changed in the bar
-# returns position and amount
+# check if a "position" (represented by a fictitious order) changed in the bar
+# returns orderDetails and amount
 def checkPosition(bar, position):
     amount, executed = checkStopProfit(position, bar)
     if executed == False:
@@ -107,7 +84,10 @@ def checkPosition(bar, position):
         logging.error('problem with position checking %s %s', position, bar)
         return None, None
 
-#position is a type: purchasePrice, stopPrice, profitPrice
+# orderDetails represents a ficitious order which:
+#   fails to execute
+#   opens and closes really fast (inside the next bar)
+#   becomes a "position" representing shares held
 # returns amount or None (error condition)
 # need another value which is "continue"
 # returns
@@ -117,41 +97,44 @@ def checkStopProfit(position, bar):
     amount = None
     executed = None
     # executed at stop price
-    if position['stopPrice'] >= bar.low and position['profitPrice'] > bar.high:
-        amount = position['stopPrice'] - position['buyPrice']
-        logging.info('closing position at a loss: %i %s %s', amount, position, bar)
+    if position.buyPrice - position.config.stopTarget >= bar.low and position.buyPrice + position.config.profitTarget > bar.high:
+        amount = (-1 * position.config.stopTarget) * position.config.qty
+        logging.info('closing position at a loss: %.2f %s %s', amount, position, bar)
         executed = True
     # executed at profit price
-    elif position['stopPrice'] < bar.low and position['profitPrice'] <= bar.high:
-        amount = position['profitPrice'] - position['buyPrice']
-        logging.info('closing position at a gain: %i %s %s', amount, position, bar)
+    elif position.buyPrice - position.config.stopTarget < bar.low and position.buyPrice + position.config.profitTarget <= bar.high:
+        amount = position.config.profitTarget * position.config.qty
+        logging.info('closing position at a gain: %.2f %s %s', amount, position, bar)
         executed = True
     # did not execute, no delta, stays as a position
-    elif position['stopPrice'] < bar.low and position['profitPrice'] > bar.high:
+    elif position.buyPrice - position.config.stopTarget < bar.low and position.buyPrice + position.config.profitTarget > bar.high:
         logging.info('not closing a position: %s, %s', position, bar)
         executed = False
         amount = None
     # unknown execution, assume loss
-    elif position['stopPrice'] >= bar.low and position['profitPrice'] <= bar.high:
+    elif position.buyPrice - position.config.stopTarget >= bar.low and position.buyPrice + position.config.profitTarget <= bar.high:
         logging.info('wonky: closing position: %s', position)
         executed = None
-        amount = position['stopPrice'] - position['buyPrice']
+        amount = (-1 * position.config.stopTarget) * position.config.qty
     else:
         logging.fatal('unhandled %s %s', position, bar)
     return amount, executed
 
 util.logToConsole(logging.FATAL)
+conf = getConfig(args.symbol)
+conf = overrideConfig(conf)
 ib = IB()
-ib.connect("localhost", 4002, clientId=2)
+ib.connect("localhost", 4002, clientId=rand.Int())
 
 contract = contractLookup(args.symbol, args.conId)
 qc = ib.qualifyContracts(contract)
 if len(qc) < 1:
     logging.fatal('could not validate contract')
     sys.exit(1)
-bars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.ticks, whatToShow='TRADES', useRTH=True, formatDate=1)
+useRth = False if conf.outsideRth else True
+histBars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=1)
 ib.sleep(1)
-anotateBars(bars)
+bars = anotateBars(histBars)
 
 data = {'first':None, 'second':None, 'third':None}
 trade = None
@@ -172,36 +155,39 @@ for i in range(2, len(bars)-1):
         # wonky use of executed vs amount
         closed, amount = checkPosition(data['third'], position)
         if closed:
-            logging.error('closed a position: %i %r %s %s', amount, closed, position, data['third'])
+            logging.error('closed a position: %.2f %r %s %s', amount, closed, position, data['third'])
             totalGainLoss += amount
             if totalFundsInPlay > maxFundsInPlay:
                 maxFundsInPlay = totalFundsInPlay
-            totalFundsInPlay -= position['buyPrice']
+            totalFundsInPlay -= position.buyPrice * position.config.qty
             positions.remove(position)
         # position stays, no changes
 
     # analyze the trade for execution
-    trade = analyze(data)
+    trade = order.Analyze(data, conf)
     #trade = analyze(data)
     if trade is not None:
-        logging.info('found a trade: %s %s', trade, data)
-        position, amount = checkTradeExecution(data['third'], trade)
-        # check if the trade executed
-        if position is not None:
-            logging.error('opened a position: %s', position)
-            positions.append(position)
-            totalFundsInPlay += position['buyPrice']
-        elif position is None and amount is not None:
-            totalGainLoss += amount
-        logging.info('totalFundsInPlay: %i', totalFundsInPlay)
+        logging.info('found an order: %s %s', trade, data)
+        if len(positions) < trade.config.openPositions:
+            position, amount = checkTradeExecution(data['third'], trade)
+            # check if the trade executed
+            if position is not None:
+                logging.error('opened a position: %s', position)
+                positions.append(position)
+                totalFundsInPlay += position.buyPrice * position.config.qty
+            elif position is None and amount is not None:
+                logging.error('opened and closed a position in third bar')
+                totalGainLoss += amount
+            logging.info('totalFundsInPlay: %.2f', totalFundsInPlay)
 
 r = 0
-totalGainLoss=totalGainLoss*50 # es00 futures ticks are 12.5 per tick
+if args.symbol == 'ES':
+    totalGainLoss=totalGainLoss*50 # es00 futures ticks are 12.5 per tick
 if maxFundsInPlay > 0:
     r = totalGainLoss/maxFundsInPlay*100
-logging.fatal('totalGainLoss: %i, maxFundsInPlay: %i, return: %i', totalGainLoss, maxFundsInPlay, r)
+logging.fatal('totalGainLoss: %.2f, maxFundsInPlay: %.2f, return: %.2f', totalGainLoss, maxFundsInPlay, r)
 
-ib.cancelHistoricalData(bars)
+ib.cancelHistoricalData(histBars)
 ib.sleep(1)
 ib.disconnect()
 

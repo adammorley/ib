@@ -4,6 +4,11 @@ from market.config import Config
 class OrderDetails:
     buyPrice: float = 0.0
     config: Config
+    def __repr__(self):
+        pieces = []
+        for k, v in self.__dict__.items():
+            pieces.append('{}:{}'.format(k, v))
+        return ','.join(pieces)
 
 def Analyze(d, conf):
     if d['first'].color == 'X' or d['second'].color == 'X' or d['third'].color == 'X':
@@ -42,24 +47,29 @@ class Orders:
     profitOrder: Order
     stopOrder: Order
     locOrder: Order
+    def __repr__(self):
+        pieces = []
+        for k, v in self.__dict__.items():
+            pieces.append('{}:{}'.format(k, v))
+        return ','.join(pieces)
 
 def calculateProfitTarget(od):
     if od.config.percents:
         return od.buyPrice * (100.0 + od.profitPercent)/100.0
     else:
-        return od.config.profitPrice
+        return od.buyPrice + od.config.profitTarget
 
 def calculateLocTarget(od):
     if od.config.percents:
         return od.buyPrice * (100.0 + od.locPercent)/100.0
     else:
-        return od.config.locPrice
+        return od.buyPrice + od.config.locTarget
 
 def calculateStopTarget(od):
     if od.config.percents:
         return od.buyPrice * (100.0 - od.stopPercent)/100.0
     else:
-        return od.config.stopPrice
+        return od.buyPrice - od.config.stopTarget
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 def CreateBracketOrder(contract, orderDetails):
@@ -70,7 +80,7 @@ def CreateBracketOrder(contract, orderDetails):
                         orderType='LMT',
                         lmtPrice=orderDetails.buyPrice,
                         tif='DAY',
-                        outsideRth=True)
+                        outsideRth=orderDetails.config.outsideRth)
     profitPrice = calculateProfitTarget(od)
     orders.profitOrder = Order(transmit=False,
                         action='SELL',
@@ -78,7 +88,7 @@ def CreateBracketOrder(contract, orderDetails):
                         orderType='LMT',
                         lmtPrice=profitPrice,
                         tif='GTC',
-                        outsideRth=True)
+                        outsideRth=orderDetails.config.outsideRth)
     locPrice = calculateLocTarget(od)
     orders.locOrder = Order(transmit=False,
                         action='SELL',
@@ -86,7 +96,7 @@ def CreateBracketOrder(contract, orderDetails):
                         orderType='LOC',
                         lmtPrice=locPrice,
                         tif='DAY',
-                        outsideRth=true)
+                        outsideRth=orderDetails.config.outsideRth)
     stopPrice = calculateStopTarget(od)
     if orderDetails.config.trail:
         orders.stopOrder = Order(transmit=True,
@@ -95,7 +105,7 @@ def CreateBracketOrder(contract, orderDetails):
                             orderType='TRAIL',
                             auxPrice=stopPrice,
                             tif='GTC',
-                            outsideRth=True)
+                            outsideRth=orderDetails.config.outsideRth)
     else:
         orders.stopOrder = Order(transmit=True,
                             action='SELL',
@@ -103,5 +113,5 @@ def CreateBracketOrder(contract, orderDetails):
                             orderType='STP',
                             auxPrice=stopPrice,
                             tif='GTC',
-                            outsideRth=True)
+                            outsideRth=orderDetails.config.outsideRth)
     return orders

@@ -8,6 +8,11 @@ class Bar:
     barSize: float = 0.0
     lineSize: float = 0.0
     color: str = 'X'
+    def __repr__(self):
+        pieces = []
+        for k, v in self.__dict__.items():
+            pieces.append('{}:{}'.format(k, v))
+        return ','.join(pieces)
 
 numberOfTicksInBar = 240
 sleepSecs = 0.250
