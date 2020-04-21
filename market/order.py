@@ -48,7 +48,8 @@ class Orders:
     profitOrder: Order
     stopOrder: Order
 
-def CreateOrders(contract, orderDetails, conf):
+# note: https://interactivebrokers.github.io/tws-api/bracket_order.html
+def CreateBracketOrder(contract, orderDetails, conf):
     orders = Orders()
     orders.buyOrder = Order(transmit=False,
                         action='BUY',
@@ -57,7 +58,8 @@ def CreateOrders(contract, orderDetails, conf):
                         lmtPrice=orderDetails.buyPrice,
                         tif='DAY',
                         outsideRth=True)
-    order.profitOrder = Order(action='SELL',
+    order.profitOrder = Order(transmit=False,
+                        action='SELL',
                         totalQuantity=conf.qty,
                         orderType='LMT',
                         lmtPrice=orderDetails.profitPrice,

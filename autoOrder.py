@@ -33,7 +33,7 @@ with open('conf/qqq', 'r') as f:
 
 startTime = datetime.datetime.utcnow()
 
-util.logToConsole(logging.INFO)
+util.logToConsole(logging.DEBUG)
 ibc = IB()
 ibc.connect("localhost", 4002, clientId=rand.Int())
 ibc.sleep(1)
@@ -72,8 +72,8 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
                 logging.info(orderDetails)
                 makeTrade = False
         if makeTrade:
-            orders = order.CreateOrders(contract, orderDetails, conf)
-            trades = trade.PlaceTrade(contract, orders, ibc)
+            orders = order.CreateBracketOrder(contract, orderDetails, conf)
+            trades = trade.PlaceBracketTrade(contract, orders, ibc)
             logging.debug(trades)
             logging.info(ibc.positions())
     else:
