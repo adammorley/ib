@@ -1,19 +1,24 @@
 import logging
+import sys
 
 from market import rand
 
 def PlaceBracketTrade(contract, orders, ibc):
     for order in orders:
         order.orderId = ibc.client.getReqId()
-    for order in [orders.profitOrder, orders.stopOrder]:
+    for order in [orders.profitOrder, orders.locOrder, orders.stopOrder]:
         order.parentId = orders.buyOrder.orderId
 
     # the order matters here because of the transmit flat
     #   see https://interactivebrokers.github.io/tws-api/bracket_order.html
     trades = dict()
-    for order in [orders.buyOrder, orders.profitOrder, orders.stopOrder]:
-        trades[orders.buyOrder] = ibc.placeOrder(contract, order)
-    ibc.sleep(0)
+    if orders.locOrder:
+        for order in [orders.buyOrder, orders.profitOrder, orders.locOrder, orders.stopOrder]:
+            trades[order] = ibc.placeOrder(contract, order)
+        ibc.sleep(0)
+    else:
+        logging.fatal('must have loc')
+        sys.exit(1)
 
     n = 0
     while n < 10 and trades[orders.buyOrder].orderStatus.status != 'Filled':

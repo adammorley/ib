@@ -1,9 +1,9 @@
 import logging
 
+from market.config import Config
 class OrderDetails:
     buyPrice: float = 0.0
-    profitPrice: float = 0.0
-    stopPrice: float = 0.0
+    config: Config
 
 def Analyze(d, conf):
     if d['first'].color == 'X' or d['second'].color == 'X' or d['third'].color == 'X':
@@ -24,21 +24,15 @@ def Analyze(d, conf):
 
     #buyPrice = d['third'].open + 0.5 * d['third'].barSize
     #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
-    if conf.trail:
-        stopPrice = conf.stopPrice
-    else:
-        stopPrice = d['second'].close - conf.stopPrice
     buyPrice = d['third'].close
-    profitPrice = d['third'].close + conf.profitPrice
-    logging.info('found a potential buy point, buy: %d, stop: %d, profit: %d', buyPrice, stopPrice, profitPrice)
+    logging.info('found a potential buy point: %d, %s', buyPrice, conf)
 
     #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
     if True:
         logging.debug('valid buy point, returning')
         od = OrderDetails()
-        od.stopPrice = stopPrice
         od.buyPrice = buyPrice
-        od.profitPrice = profitPrice
+        od.config = conf
         return od
     return None
 
@@ -47,36 +41,68 @@ class Orders:
     buyOrder: Order
     profitOrder: Order
     stopOrder: Order
+    locOrder: Order
+
+def calculateProfitTarget(od):
+    if od.config.percents:
+        return od.buyPrice * (100.0 + od.profitPercent)/100.0
+    else:
+        return od.config.profitPrice
+
+def calculateLocTarget(od):
+    if od.config.percents:
+        return od.buyPrice * (100.0 + od.locPercent)/100.0
+    else:
+        return od.config.locPrice
+
+def calculateStopTarget(od):
+    if od.config.percents:
+        return od.buyPrice * (100.0 - od.stopPercent)/100.0
+    else:
+        return od.config.stopPrice
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
-def CreateBracketOrder(contract, orderDetails, conf):
+def CreateBracketOrder(contract, orderDetails, config):
     orders = Orders()
     orders.buyOrder = Order(transmit=False,
                         action='BUY',
-                        totalQuantity=conf.qty,
+                        totalQuantity=config.qty,
                         orderType='LMT',
                         lmtPrice=orderDetails.buyPrice,
                         tif='DAY',
                         outsideRth=True)
-    order.profitOrder = Order(transmit=False,
+    profitPrice = calculateProfitTarget(od)
+    orders.profitOrder = Order(transmit=False,
                         action='SELL',
-                        totalQuantity=conf.qty,
+                        totalQuantity=config.qty,
                         orderType='LMT',
-                        lmtPrice=orderDetails.profitPrice,
+                        lmtPrice=profitPrice,
                         tif='GTC',
                         outsideRth=True)
-    if conf.trail:
-        orders.stopOrder = Order(action='SELL',
-                            totalQuantity=conf.qty,
+    if config.locPercent:
+        locPrice = calculateLocTarget(od)
+        orders.locOrder = Order(transmit=False,
+                            action='SELL',
+                            totalQuantity=config.qty,
+                            orderType='LOC',
+                            lmtPrice=locPrice,
+                            tif='DAY',
+                            outsideRth=true)
+    stopPrice = calculateStopTarget(od)
+    if config.trail:
+        orders.stopOrder = Order(transmit=True,
+                            action='SELL',
+                            totalQuantity=config.qty,
                             orderType='TRAIL',
-                            auxPrice=orderDetails.stopPrice,
+                            auxPrice=stopPrice,
                             tif='GTC',
                             outsideRth=True)
     else:
-        orders.stopOrder = Order(action='SELL',
-                            totalQuantity=conf.qty,
+        orders.stopOrder = Order(transmit=True,
+                            action='SELL',
+                            totalQuantity=config.qty,
                             orderType='STP',
-                            auxPrice=orderDetails.stopPrice,
+                            auxPrice=stopPrice,
                             tif='GTC',
                             outsideRth=True)
     return orders

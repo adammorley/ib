@@ -8,6 +8,7 @@ import yaml
 from ib_insync import *
 
 from market import bars
+from market import config
 from market import order
 from market import rand
 from market import trade
@@ -16,6 +17,10 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--symbol', required=True)
 args = parser.parse_args()
+
+def getConfig():
+    with open('conf/qqq', 'r') as f:
+        return config.ProcessConfig(yaml.load(f))
 
 def getContract():
     if args.symbol == 'TQQQ':
@@ -28,12 +33,10 @@ def getContract():
         logging.fatal('no security specified')
         sys.exit(1)
 
-with open('conf/qqq', 'r') as f:
-    conf = yaml.load(f)
-
 startTime = datetime.datetime.utcnow()
-
-util.logToConsole(logging.DEBUG)
+util.logToConsole(logging.INFO)
+conf = getConfig()
+logging.info('config %s', conf.__dict__)
 ibc = IB()
 ibc.connect("localhost", 4002, clientId=rand.Int())
 ibc.sleep(1)

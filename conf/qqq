@@ -1,6 +1,8 @@
 ---
-profitPrice: 2
-stopPrice: 1
+percents: true
+profitPercent: 12.0
+stopPercent: 5.5
+locPercent: 6.0
 trail: true
 qty: 100
 openPositions: 5
