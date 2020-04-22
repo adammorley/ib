@@ -4,20 +4,20 @@ import sys
 from market import rand
 
 def PlaceBracketTrade(contract, orders, ibc):
-    for order in orders:
+    for orderType, order in orders.__dict__.items():
         order.orderId = ibc.client.getReqId()
-    for order in [orders.profitOrder, orders.locOrder, orders.stopOrder]:
-        order.parentId = orders.buyOrder.orderId
+        if orderType == 'buyOrder':
+            continue
+        else:
+            order.parentId = orders.buyOrder.orderId
 
-    # the order matters here because of the transmit flat
-    #   see https://interactivebrokers.github.io/tws-api/bracket_order.html
     trades = dict()
-    for order in [orders.buyOrder, orders.profitOrder, orders.locOrder, orders.stopOrder]:
-        trades[order] = ibc.placeOrder(contract, order)
+    for orderType, order in orders.__dict__.items():
+        trades[orderType] = ibc.placeOrder(contract, order)
     ibc.sleep(0)
 
     n = 0
-    while n < 10 and trades[orders.buyOrder].orderStatus.status != 'Filled':
+    while n < 10 and trades['buyOrder'].orderStatus.status != 'Filled':
         n += 1
         ibc.sleep(1)
         logging.info('waiting on an order fill')

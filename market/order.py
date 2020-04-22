@@ -27,26 +27,22 @@ def Analyze(d, conf):
     if not d['third'].barSize > d['second'].barSize:
         return None
 
-    #buyPrice = d['third'].open + 0.5 * d['third'].barSize
-    #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
     logging.info('found a potential buy point: %d, %s', buyPrice, conf.__dict__)
-
-    #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
-    if True:
-        logging.debug('valid buy point, returning')
-        od = OrderDetails()
-        od.buyPrice = buyPrice
-        od.config = conf
-        return od
-    return None
+    logging.debug('valid buy point, returning')
+    od = OrderDetails()
+    od.buyPrice = buyPrice
+    od.config = conf
+    return od
 
 from ib_insync.order import Order
-class Orders:
+# order of attributes matters so callers can iterate
+# sucks but need transmit=False on the first elements
+class BracketOrder:
     buyOrder: Order
     profitOrder: Order
-    stopOrder: Order
     locOrder: Order
+    stopOrder: Order
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
@@ -72,46 +68,48 @@ def calculateStopPrice(od):
         return od.buyPrice - od.config.stopTarget
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
+# order matters, see class note
 def CreateBracketOrder(contract, orderDetails):
-    orders = Orders()
-    orders.buyOrder = Order(transmit=False,
-                        action='BUY',
-                        totalQuantity=orderDetails.config.qty,
-                        orderType='LMT',
-                        lmtPrice=orderDetails.buyPrice,
-                        tif='DAY',
-                        outsideRth=orderDetails.config.outsideRth)
-    profitPrice = calculateProfitPrice(od)
-    orders.profitOrder = Order(transmit=False,
-                        action='SELL',
-                        totalQuantity=orderDetails.config.qty,
-                        orderType='LMT',
-                        lmtPrice=profitPrice,
-                        tif='GTC',
-                        outsideRth=orderDetails.config.outsideRth)
-    locPrice = calculateLocPrice(od)
-    orders.locOrder = Order(transmit=False,
-                        action='SELL',
-                        totalQuantity=orderDetails.config.qty,
-                        orderType='LOC',
-                        lmtPrice=locPrice,
-                        tif='DAY',
-                        outsideRth=orderDetails.config.outsideRth)
-    stopPrice = calculateStopPrice(od)
+    orders = BracketOrder()
+    orders.buyOrder = Order()
+    orders.buyOrder.transmit = False
+    orders.buyOrder.action = 'BUY'
+    orders.buyOrder.totalQuantity = orderDetails.config.qty
+    orders.buyOrder.orderType = 'LMT'
+    orders.buyOrder.lmtPrice = orderDetails.buyPrice
+    orders.buyOrder.tif = 'DAY'
+    orders.buyOrder.outsideRth = orderDetails.config.outsideRth
+
+    profitPrice = calculateProfitPrice(orderDetails)
+    orders.profitOrder = Order()
+    orders.profitOrder.transmit = False
+    orders.profitOrder.action = 'SELL'
+    orders.profitOrder.totalQuantity = orderDetails.config.qty
+    orders.profitOrder.orderType = 'LMT'
+    orders.profitOrder.lmtPrice = profitPrice
+    orders.profitOrder.tif = 'GTC'
+    orders.profitOrder.outsideRth = orderDetails.config.outsideRth
+
+    locPrice = calculateLocPrice(orderDetails)
+    orders.locOrder = Order()
+    orders.locOrder.transmit = False
+    orders.locOrder.action = 'SELL'
+    orders.locOrder.totalQuantity = orderDetails.config.qty
+    orders.locOrder.orderType = 'LOC'
+    orders.locOrder.lmtPrice = locPrice
+    orders.locOrder.tif = 'DAY'
+    orders.locOrder.outsideRth = orderDetails.config.outsideRth
+
+    stopPrice = calculateStopPrice(orderDetails)
+    orders.stopOrder = Order()
+    orders.stopOrder.transmit = True
+    orders.stopOrder.action = 'SELL'
+    orders.stopOrder.totalQuantity = orderDetails.config.qty
+    orders.stopOrder.auxPrice = stopPrice
+    orders.stopOrder.tif = 'GTC'
+    orders.stopOrder.outsideRth = orderDetails.config.outsideRth
     if orderDetails.config.trail:
-        orders.stopOrder = Order(transmit=True,
-                            action='SELL',
-                            totalQuantity=orderDetails.config.qty,
-                            orderType='TRAIL',
-                            auxPrice=stopPrice,
-                            tif='GTC',
-                            outsideRth=orderDetails.config.outsideRth)
+        orders.stopOrder.orderType = 'TRAIL'
     else:
-        orders.stopOrder = Order(transmit=True,
-                            action='SELL',
-                            totalQuantity=orderDetails.config.qty,
-                            orderType='STP',
-                            auxPrice=stopPrice,
-                            tif='GTC',
-                            outsideRth=orderDetails.config.outsideRth)
+        orders.stopOrder.orderType = 'STP'
     return orders

@@ -53,7 +53,7 @@ if len(qc) != 1 or qc[0].symbol != args.symbol:
     logging.fatal('could not validate contract: %s', qc)
     sys.exit(1)
 
-ticker = ibc.reqMktData(contract, '', False, False)
+ticker = ibc.reqMktData(contract=contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
 ibc.sleep(1)
 
 logging.info('running trade loop')
