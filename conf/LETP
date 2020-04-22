@@ -1,0 +1,9 @@
+---
+percents: true
+profitPercent: 20
+stopPercent: 5
+locPercent: 10
+trail: true
+qty: 1
+openPositions: 1
+outsideRth: true
