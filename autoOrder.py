@@ -19,7 +19,7 @@ parser.add_argument('--symbol', required=True)
 args = parser.parse_args()
 
 def getConfig():
-    with open('conf/qqq', 'r') as f:
+    with open('conf/QQQ', 'r') as f:
         return config.ProcessConfig(yaml.load(f))
 
 def getContract():
