@@ -27,19 +27,13 @@ def Analyze(d, conf):
     if not d['third'].barSize > d['second'].barSize:
         return None
 
-    #buyPrice = d['third'].open + 0.5 * d['third'].barSize
-    #buyPrice = bar.open + bar.barSize * 0.5 # simulating buying at market in next interval
     buyPrice = d['third'].close
     logging.info('found a potential buy point: %d, %s', buyPrice, conf.__dict__)
-
-    #if profitPrice - buyPrice > buyPrice - stopPrice: # bigger on win side, more momo
-    if True:
-        logging.debug('valid buy point, returning')
-        od = OrderDetails()
-        od.buyPrice = buyPrice
-        od.config = conf
-        return od
-    return None
+    logging.debug('valid buy point, returning')
+    od = OrderDetails()
+    od.buyPrice = buyPrice
+    od.config = conf
+    return od
 
 from ib_insync.order import Order
 class Orders:
