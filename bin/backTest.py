@@ -16,6 +16,8 @@ from market import rand
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=None)
+parser.add_argument('--info', action='store_true', default=None)
+parser.add_argument('--error', action='store_true', default=None)
 parser.add_argument("--duration", default=5, type=int)
 parser.add_argument("--endDate", default='', type=str)
 parser.add_argument("--tickSize", default='1 min', type=str)
@@ -100,31 +102,34 @@ def checkStopProfit(position, bar):
     # executed at stop price
     if position.buyPrice - position.config.stopTarget >= bar.low and position.buyPrice + position.config.profitTarget > bar.high:
         amount = (-1 * position.config.stopTarget) * position.config.qty
-        logging.info('closing position at a loss: %.2f %s %s', amount, position, bar)
+        logging.debug('closing position at a loss: %.2f %s %s', amount, position, bar)
         executed = True
     # executed at profit price
     elif position.buyPrice - position.config.stopTarget < bar.low and position.buyPrice + position.config.profitTarget <= bar.high:
         amount = position.config.profitTarget * position.config.qty
-        logging.info('closing position at a gain: %.2f %s %s', amount, position, bar)
+        logging.debug('closing position at a gain: %.2f %s %s', amount, position, bar)
         executed = True
     # did not execute, no delta, stays as a position
     elif position.buyPrice - position.config.stopTarget < bar.low and position.buyPrice + position.config.profitTarget > bar.high:
-        logging.info('not closing a position: %s, %s', position, bar)
+        logging.debug('not closing a position: %s, %s', position, bar)
         executed = False
         amount = None
     # unknown execution, assume loss
     elif position.buyPrice - position.config.stopTarget >= bar.low and position.buyPrice + position.config.profitTarget <= bar.high:
-        logging.info('wonky: closing position: %s', position)
+        logging.debug('wonky: closing position: %s', position)
         executed = None
         amount = (-1 * position.config.stopTarget) * position.config.qty
     else:
         logging.fatal('unhandled %s %s', position, bar)
     return amount, executed
 
-if args.debug is not None:
+util.logToConsole(logging.FATAL)
+if args.error is not None:
+    util.logToConsole(logging.ERROR)
+elif args.info is not None:
+    util.logToConsole(logging.INFO)
+elif args.debug is not None:
     util.logToConsole(logging.DEBUG)
-else:
-    util.logToConsole(logging.FATAL)
 
 conf = getConfig(args.symbol)
 conf = overrideConfig(conf)
