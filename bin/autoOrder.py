@@ -56,7 +56,7 @@ if len(qc) != 1 or qc[0].symbol != args.symbol:
 ticker = ibc.reqMktData(contract=contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
 ibc.sleep(1)
 
-logging.info('running trade loop')
+logging.info('running trade loop...')
 data = {'first':None, 'second':None, 'third':None}
 while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     if data['first'] is None and data['second'] is None:
@@ -74,15 +74,12 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
         for p in positions:
             if p.contract == contract and p.position >= conf.qty * conf.openPositions:
                 logging.info('passing on trade as max positions already open')
-                logging.info(orderDetails)
                 makeTrade = False
         if makeTrade:
             orders = order.CreateBracketOrder(contract, orderDetails)
             trades = trade.PlaceBracketTrade(contract, orders, ibc)
             logging.debug(trades)
-            logging.info(ibc.positions())
-    else:
-        logging.info('did not find a trade')
+            logging.info('placed a trade')
 
 ibc.cancelMktData(contract)
 ibc.sleep(1)

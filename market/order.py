@@ -32,7 +32,7 @@ def Analyze(d, conf):
         # likely NaN, data issue
         logging.debug('got an NaN, aborting')
         return None
-    logging.info('found a potential buy point: %d, %s', buyPrice, conf.__dict__)
+    logging.debug('found a potential buy point: %d, %s', buyPrice, conf.__dict__)
     logging.debug('valid buy point, returning')
     od = OrderDetails()
     od.buyPrice = buyPrice

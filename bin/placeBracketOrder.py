@@ -19,7 +19,6 @@ from market import trade
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=None)
-parser.add_argument('--info', action='store_true', default=None)
 parser.add_argument('--symbol', required=True)
 parser.add_argument('--localSymbol')
 parser.add_argument('--conf', required=True)
@@ -45,10 +44,8 @@ def getContract():
         logging.fatal('no security specified')
         sys.exit(1)
 
-util.logToConsole(logging.ERROR)
-if args.info is not None:
-    util.logToConsole(logging.INFO)
-elif args.debug is not None:
+util.logToConsole(logging.INFO)
+if args.debug is not None:
     util.logToConsole(logging.DEBUG)
 conf = getConfig()
 logging.info('config %s', conf)
@@ -74,7 +71,6 @@ orderDetails = Order()
 if tick.marketPrice() != tick.marketPrice():
     logging.fatal('NaN!')
     sys.exit(1)
-logging.info('marketprice %f %s', tick.marketPrice(),tick.marketPrice())
 orderDetails.buyPrice = tick.marketPrice() + 0.50
 orderDetails.config = conf
 logging.info('created an order for contract %s %s', contract, orderDetails)

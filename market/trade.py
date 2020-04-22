@@ -20,8 +20,9 @@ def PlaceBracketTrade(contract, orders, ibc):
     while n < 10 and trades['buyOrder'].orderStatus.status != 'Filled':
         n += 1
         ibc.sleep(1)
-        logging.info('waiting on an order fill')
+        if n > 3:
+            logging.debug('waiting on an order fill')
 
     ibc.sleep(0)
-    logging.info('placed orders')
+    logging.debug('placed orders')
     return trades
