@@ -7,6 +7,8 @@ import yaml
 
 from ib_insync import *
 
+sys.path.append(r'.')
+
 from market import bars
 from market import config
 from market import order
