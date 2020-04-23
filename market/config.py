@@ -10,6 +10,13 @@ def getConfig(configFile):
     with open(configFile, 'r') as f:
         return ProcessConfig(yaml.load(f))
 
+def overrideConfig(conf, profitTarget, stopTarget):
+    if profitTarget is not None:
+        conf.profitTarget = profitTarget
+    if stopTarget is not None:
+        conf.stopTarget = stopTarget
+    return conf
+
 class Config:
     percents: bool
     profitTarget: float
