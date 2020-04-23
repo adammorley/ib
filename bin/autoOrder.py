@@ -11,6 +11,8 @@ sys.path.append(r'.')
 
 from market import bars
 from market import config
+from market import connect
+from market import contract
 from market import order
 from market import rand
 from market import trade
@@ -20,34 +22,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--symbol', required=True)
 args = parser.parse_args()
 
-def getConfig():
-    with open('conf/QQQ', 'r') as f:
-        return config.ProcessConfig(yaml.load(f))
-
-def getContract():
-    if args.symbol == 'TQQQ':
-        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
-    elif args.symbol == 'SQQQ':
-        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
-    elif args.symbol == 'ES00':
-        return Contract(secType='FUT', symbol='ES', localSymbol=args.esLocal, exchange='GLOBEX', currency='USD')
-    else:
-        logging.fatal('no security specified')
-        sys.exit(1)
-
 startTime = datetime.datetime.utcnow()
+ibc = connect.connect(logging.INFO)
 util.logToConsole(logging.INFO)
-conf = getConfig()
+conf = config.getConfig('conf/QQQ')
 logging.info('config %s', conf)
-ibc = IB()
-ibc.connect("localhost", 4002, clientId=rand.Int())
-ibc.sleep(1)
-if not ibc.isConnected():
-    logging.fatal('did not connect.')
-    sys.exit(1)
 
 logging.info('connected, qualifying contract')
-contract = getContract()
+contract = contract.getContract(args.symbol, None)
 qc = ibc.qualifyContracts(contract)
 if len(qc) != 1 or qc[0].symbol != args.symbol:
     logging.fatal('could not validate contract: %s', qc)

@@ -6,4 +6,5 @@ locPercent: 10
 trail: true
 qty: 1
 openPositions: 1
-outsideRth: true
+buyOutsideRth: false
+sellOutsideRth: true

@@ -6,4 +6,5 @@ locTarget: 1
 trail: false
 qty: 100
 openPositions: 5
-outsideRth: true
+buyOutsideRth: false
+sellOutsideRth: true

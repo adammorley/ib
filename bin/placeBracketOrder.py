@@ -4,7 +4,6 @@ import datetime
 import logging
 import sys
 import yaml
-from os import path
 
 from ib_insync import *
 
@@ -12,8 +11,9 @@ sys.path.append(r'.')
 
 from market import bars
 from market import config
+from market import connect
+from market import contract
 from market import order
-from market import rand
 from market import trade
 
 import argparse
@@ -24,40 +24,14 @@ parser.add_argument('--localSymbol')
 parser.add_argument('--conf', required=True)
 args = parser.parse_args()
 
-def getConfig():
-    if not path.isfile(args.conf):
-        logging.fatal('need config file')
-        sys.exit(1)
-    with open(args.conf, 'r') as f:
-        return config.ProcessConfig(yaml.load(f))
-
-def getContract():
-    if args.symbol == 'TQQQ':
-        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
-    elif args.symbol == 'SQQQ':
-        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
-    elif args.symbol == 'AAP2' or args.symbol == 'AMZ2' or args.symbol == 'CRM2' or args.symbol == 'FB2' or args.symbol == 'GOO2' or args.symbol == 'GS2' or args.symbol == 'MSF2' or args.symbol == 'NFL2' or args.symbol == 'NVD2':
-        return Stock(symbol=args.symbol, exchange='SMART', currency='USD', primaryExchange='LSE')
-    elif args.symbol == 'ES':
-        return Contract(secType='FUT', symbol='ES', localSymbol=args.esLocal, exchange='GLOBEX', currency='USD')
-    else:
-        logging.fatal('no security specified')
-        sys.exit(1)
-
-util.logToConsole(logging.INFO)
-if args.debug is not None:
-    util.logToConsole(logging.DEBUG)
-conf = getConfig()
+logLevel = logging.INFO
+if args.debug:
+    logLevel = logging.DEBUG
+ibc = connect.connect(logLevel)
+conf = config.getConfig(args.conf)
 logging.info('config %s', conf)
-ibc = IB()
-ibc.connect("localhost", 4002, clientId=rand.Int())
-ibc.sleep(1)
-if not ibc.isConnected():
-    logging.fatal('did not connect.')
-    sys.exit(1)
-
 logging.info('connected, qualifying contract')
-contract = getContract()
+contract = contract.getContract(args.symbol, args.localSymbol)
 qc = ibc.qualifyContracts(contract)
 if len(qc) != 1 or qc[0].symbol != args.symbol:
     logging.fatal('could not validate contract: %s', qc)

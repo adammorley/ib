@@ -142,7 +142,7 @@ qc = ib.qualifyContracts(contract)
 if len(qc) < 1:
     logging.fatal('could not validate contract')
     sys.exit(1)
-useRth = False if conf.outsideRth else True
+useRth = False if conf.buyOutsideRth else True
 histBars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=1)
 ib.sleep(1)
 newBars = anotateBars(histBars)

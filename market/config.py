@@ -1,5 +1,14 @@
 import logging
 import sys
+import yaml
+from os import path
+
+def getConfig(configFile):
+    if not path.isfile(configFile):
+        logging.fatal('need config file')
+        sys.exit(1)
+    with open(configFile, 'r') as f:
+        return ProcessConfig(yaml.load(f))
 
 class Config:
     percents: bool
@@ -12,13 +21,13 @@ class Config:
     trail: bool
     qty: int
     openPositions: int
-    outsideRth: bool
+    buyOutsideRth: bool
+    sellOutsideRth: bool
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
-
 
 def ProcessConfig(conf):
     config = Config()
@@ -35,6 +44,7 @@ def ProcessConfig(conf):
     config.trail = conf['trail']
     config.qty = conf['qty']
     config.openPositions = conf['openPositions']
-    config.outsideRth = conf['outsideRth']
+    config.buyOutsideRth = conf['buyOutsideRth']
+    config.sellOutsideRth = conf['sellOutsideRth']
 
     return config

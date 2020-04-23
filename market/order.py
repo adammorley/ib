@@ -82,7 +82,7 @@ def CreateBracketOrder(contract, orderDetails):
     orders.buyOrder.orderType = 'LMT'
     orders.buyOrder.lmtPrice = orderDetails.buyPrice
     orders.buyOrder.tif = 'DAY'
-    orders.buyOrder.outsideRth = orderDetails.config.outsideRth
+    orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
 
     profitPrice = calculateProfitPrice(orderDetails)
     orders.profitOrder = Order()
@@ -92,7 +92,7 @@ def CreateBracketOrder(contract, orderDetails):
     orders.profitOrder.orderType = 'LMT'
     orders.profitOrder.lmtPrice = profitPrice
     orders.profitOrder.tif = 'GTC'
-    orders.profitOrder.outsideRth = orderDetails.config.outsideRth
+    orders.profitOrder.outsideRth = orderDetails.config.sellOutsideRth
 
     locPrice = calculateLocPrice(orderDetails)
     orders.locOrder = Order()
@@ -102,7 +102,7 @@ def CreateBracketOrder(contract, orderDetails):
     orders.locOrder.orderType = 'LOC'
     orders.locOrder.lmtPrice = locPrice
     orders.locOrder.tif = 'DAY'
-    orders.locOrder.outsideRth = orderDetails.config.outsideRth
+    orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
 
     stopPrice = calculateStopPrice(orderDetails)
     orders.stopOrder = Order()
@@ -111,7 +111,7 @@ def CreateBracketOrder(contract, orderDetails):
     orders.stopOrder.totalQuantity = orderDetails.config.qty
     orders.stopOrder.auxPrice = stopPrice
     orders.stopOrder.tif = 'GTC'
-    orders.stopOrder.outsideRth = orderDetails.config.outsideRth
+    orders.stopOrder.outsideRth = orderDetails.config.sellOutsideRth
     if orderDetails.config.trail:
         orders.stopOrder.orderType = 'TRAIL'
     else:
