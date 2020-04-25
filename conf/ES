@@ -1,9 +1,9 @@
 ---
-percents: false
-profitTarget: 8.0
-stopTarget: 2.0
-locTarget: 1.0
-trail: false
+percents: true
+profitPercent: 0.69
+stopPercent: 0.18
+locPercent: 0.25
+trail: true
 qty: 1
 openPositions: 1
 buyOutsideRth: false
