@@ -11,7 +11,7 @@ def getContract(symbol, localSymbol):
         return Stock(symbol=symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
     elif symbol == 'AAP2' or symbol == 'AMZ2' or symbol == 'CRM2' or symbol == 'FB2' or symbol == 'GOO2' or symbol == 'GS2' or symbol == 'MSF2' or symbol == 'NFL2' or symbol == 'NVD2':
         return Stock(symbol=symbol, exchange='SMART', currency='USD', primaryExchange='LSE')
-    elif symbol == 'ES':
+    elif symbol == 'ES' or symbol == 'NQ':
         return Contract(secType='FUT', symbol=symbol, localSymbol=localSymbol, exchange='GLOBEX', currency='USD')
     else:
         logging.fatal('no security specified')

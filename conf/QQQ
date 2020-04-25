@@ -1,8 +1,8 @@
 ---
-percents: false
-profitTarget: 2
-stopTarget: 1
-locTarget: 1
+percents: true
+profitTarget: 4
+stopPercent: 2
+locPercent: 2
 trail: false
 qty: 100
 openPositions: 5
