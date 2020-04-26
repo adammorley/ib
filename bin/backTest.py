@@ -48,10 +48,8 @@ conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget)
 logging.info('config %s', conf)
 
 c = contract.getContract(args.symbol, args.localSymbol)
-qc = ib.qualifyContracts(c)
-if len(qc) < 1:
-    logging.fatal('could not validate contract')
-    sys.exit(1)
+contract.qualify(c, ibc)
+
 useRth = False if conf.buyOutsideRth else True
 histBars = ib.reqHistoricalData(c, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=2)
 ib.sleep(1)

@@ -43,11 +43,11 @@ orderDetails = OrderDetails(buyPrice, conf, c)
 
 logging.info('created an order for contract %s %s', c, orderDetails)
 
-orders = order.CreateBracketOrder(c, orderDetails)
+orders = order.CreateBracketOrder(orderDetails)
 logging.info('created bracket orders %s', orders)
 
 if args.go:
-    trades = trade.PlaceBracketTrade(c, orders, ibc)
+    trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
     logging.info('trades in flight %s', trades)
 else:
     logging.info('would place this order: %s', orders)

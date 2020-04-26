@@ -3,7 +3,7 @@ import logging
 from ib_insync.order import Contract
 from market.config import Config
 class OrderDetails:
-    buyPrice: float = 0.0
+    buyPrice: float = None
     config: Config
     contract: Contract
 
@@ -22,11 +22,10 @@ from ib_insync.order import Order
 # order of attributes matters so callers can iterate
 # sucks but need transmit=False on the first elements
 class BracketOrder:
+    buyOrder: Order
     profitOrder: Order
     locOrder: Order
     stopOrder: Order
-    buyOrder: Order
-    contract: Contract
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
@@ -58,14 +57,19 @@ def calculateQty(od):
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 # order matters, see class note
-def CreateBracketOrder(contract, orderDetails):
-    if orderDetails.contract != contract:
-        raise RuntimeError('contract mismatch')
-
+def CreateBracketOrder(orderDetails):
     calculateQty(orderDetails)
 
     orders = BracketOrder()
-    orders.contract = contract
+
+    orders.buyOrder = Order()
+    orders.buyOrder.transmit = False
+    orders.buyOrder.action = 'BUY'
+    orders.buyOrder.totalQuantity = orderDetails.config.qty
+    orders.buyOrder.orderType = 'LMT'
+    orders.buyOrder.lmtPrice = orderDetails.buyPrice
+    orders.buyOrder.tif = 'DAY'
+    orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
 
     profitPrice = calculateProfitPrice(orderDetails)
     orders.profitOrder = Order()
@@ -88,7 +92,7 @@ def CreateBracketOrder(contract, orderDetails):
     orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
 
     orders.stopOrder = Order()
-    orders.stopOrder.transmit = False
+    orders.stopOrder.transmit = True
     orders.stopOrder.action = 'SELL'
     orders.stopOrder.totalQuantity = orderDetails.config.qty
     orders.stopOrder.tif = 'GTC'
@@ -100,14 +104,5 @@ def CreateBracketOrder(contract, orderDetails):
         stopPrice = calculateStopPrice(od)
         orders.stopOrder.orderType = 'STP'
         orders.stopOrder.auxPrice = stopPrice
-
-    orders.buyOrder = Order()
-    orders.buyOrder.transmit = True
-    orders.buyOrder.action = 'BUY'
-    orders.buyOrder.totalQuantity = orderDetails.config.qty
-    orders.buyOrder.orderType = 'LMT'
-    orders.buyOrder.lmtPrice = orderDetails.buyPrice
-    orders.buyOrder.tif = 'DAY'
-    orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
 
     return orders

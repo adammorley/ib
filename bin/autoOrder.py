@@ -40,7 +40,7 @@ else:
 contract.qualify(c, ibc)
 
 ticker = data.getTicker(c, ibc)
-ibc.sleep(1)
+ibc.sleep(0)
 
 logging.info('running trade loop...')
 barSet = bars.BarSet()
@@ -53,7 +53,7 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
         barSet.second = barSet.third
     barSet.third = bars.GetNextBar(ticker, ibc.sleep)
     try:
-        orderDetails = OrderDetails(barSet.analyze(), conf, c)
+        orderDetails = order.OrderDetails(barSet.analyze(), conf, c)
     except FloatingPointError as e:
         logging.debug('got a NaN %s', e)
 
@@ -66,8 +66,8 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
                 logging.info('passing on trade as max positions already open')
                 makeTrade = False
         if makeTrade:
-            orders = order.CreateBracketOrder(c, orderDetails)
-            trades = trade.PlaceBracketTrade(c, orders, ibc)
+            orders = order.CreateBracketOrder(orderDetails)
+            trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
             logging.debug(trades)
             logging.info('placed a trade')
 

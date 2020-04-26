@@ -40,9 +40,6 @@ class Bar:
             self.color = 'G'
         elif self.close != self.close and self.open != self.open:
             raise FloatingPointError('got a self with NaN: %s', self)
-        else:
-            self.color = 'X'
-            raise Exception('unhandled self type: %s', self)
 
 numberOfTicksInBar = 240
 sleepSecs = 0.250
@@ -52,14 +49,16 @@ def GetNextBar(ticker, sleepFunc):
     logging.debug('getting points every 250ms')
     bar = Bar(ticker.marketPrice())
     for i in range(0, numberOfTicksInBar):
+        sleepFunc(sleepSecs)
         m = ticker.marketPrice()
         if m > bar.high:
             bar.high = m
         elif m < bar.low:
             bar.low = m
-        sleepFunc(sleepSecs)
     bar.close = ticker.marketPrice()
-    return bar.cleanUp().anotate()
+    bar.cleanUp()
+    bar.anotate()
+    return bar
 
 class BarSet:
     first: Bar = None

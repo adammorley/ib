@@ -3,10 +3,7 @@ import sys
 
 from market import rand
 
-def PlaceBracketTrade(contract, orders, ibc):
-    if orders.contract != contract:
-        raise RuntimeError('contract mismatch')
-
+def PlaceBracketTrade(orders, orderDetails, ibc):
     #oca=[]
     orders.buyOrder.orderId = ibc.client.getReqId()
     for orderType, order in orders.__dict__.items():
@@ -20,7 +17,7 @@ def PlaceBracketTrade(contract, orders, ibc):
 
     trades = dict()
     for orderType, order in orders.__dict__.items():
-        trades[orderType] = ibc.placeOrder(contract, order)
+        trades[orderType] = ibc.placeOrder(orderDetails.contract, order)
     ibc.sleep(0)
 
     n = 0
