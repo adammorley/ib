@@ -1,6 +1,8 @@
 import logging
 import sys
 
+from ib_insync.order import OrderStatus
+
 from market import rand
 
 def PlaceBracketTrade(orders, orderDetails, ibc):
@@ -25,7 +27,7 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     ibc.sleep(0)
 
     n = 0
-    while n < 3 and bos.status != 'Filled':
+    while n < 3 and bos.status != OrderStatus.Filled:
         n += 1
         ibc.sleep(1)
         if n > 1:
@@ -35,7 +37,6 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     logging.debug('placed orders')
     return trades
 
-from ib_insync.order import OrderStatus
 def CheckTradeExecution(trades):
     for trade in trades:
         if trade.orderStatus.status == OrderStatus.Cancelled:
