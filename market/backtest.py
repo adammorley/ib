@@ -6,7 +6,7 @@ def anotateBars(histBars):
     newBars = []
     for i in range(0, len(histBars)):
         newBars.append(makeBar(histBars[i]))
-        newBars[i] = bars.AnotateBar(newBars[i])
+        newBars[i].anotate()
     return newBars
 
 def makeBar(histBar):

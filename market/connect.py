@@ -10,12 +10,22 @@ def connect(logLevel):
     ibc = IB()
     connected = False
     n = 0
-    while not connected and n < 10:
+    while not connected and n < 3:
         n += 1
-        ibc.connect("localhost", 4002, clientId=rand.Int())
-        ibc.sleep(1)
-        connected = ibc.isConnected()
-    if not ibc.isConnected():
-        logging.fatal('did not connect.')
-        sys.exit(1)
+        try:
+            ibc.connect("localhost", 4002, clientId=rand.Int())
+            ibc.sleep(0.25)
+            connected = ibc.isConnected()
+        except:
+            pass
+
+    if not connected:
+        raise RuntimeError('could not connect')
     return ibc
+
+def close(ibc, c=None):
+    if c is not None:
+        ibc.cancelMktData(c)
+        ibc.sleep(0)
+    ibc.disconnect()
+    ibc.sleep(0)

@@ -13,7 +13,9 @@ def getContract(symbol, localSymbol):
         return Stock(symbol=symbol, exchange='SMART', currency='USD', primaryExchange='LSE')
     elif symbol == 'ES' or symbol == 'NQ':
         return Contract(secType='FUT', symbol=symbol, localSymbol=localSymbol, exchange='GLOBEX', currency='USD')
-    else:
-        logging.fatal('no security specified')
-        sys.exit(1)
+    raise RuntimeError('no security specified')
 
+def qualify(contract, ibc):
+    qc = ibc.qualifyContracts(contract)
+    if len(qc) != 1 or qc[0].symbol != contract.symbol:
+        raise LookupError('could not qualify contract %s', qc)

@@ -4,9 +4,6 @@ import yaml
 from os import path
 
 def getConfig(configFile):
-    if not path.isfile(configFile):
-        logging.fatal('need config file')
-        sys.exit(1)
     with open(configFile, 'r') as f:
         return ProcessConfig(yaml.load(f))
 

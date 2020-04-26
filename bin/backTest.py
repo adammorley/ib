@@ -15,6 +15,7 @@ from market import bars
 from market import config
 from market import connect
 from market import contract
+from market import data
 from market import order
 from market import rand 
 
@@ -46,36 +47,36 @@ conf = config.getConfig(args.conf)
 conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget)
 logging.info('config %s', conf)
 
-contract = contract.getContract(args.symbol, args.localSymbol)
-qc = ib.qualifyContracts(contract)
+c = contract.getContract(args.symbol, args.localSymbol)
+qc = ib.qualifyContracts(c)
 if len(qc) < 1:
     logging.fatal('could not validate contract')
     sys.exit(1)
 useRth = False if conf.buyOutsideRth else True
-histBars = ib.reqHistoricalData(contract, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=2)
+histBars = ib.reqHistoricalData(c, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=2)
 ib.sleep(1)
 newBars = backtest.anotateBars(histBars)
 
-data = {'first':None, 'second':None, 'third':None}
+barSet = bars.BarSet()
 trade = None
 positions = []
 totalGainLoss = 0
 totalFundsInPlay = 0
 maxFundsInPlay = 0
-data['first'] = backtest.getNextBar(newBars, 0)
-data['second'] = backtest.getNextBar(newBars, 1)
+barSet.first = backtest.getNextBar(newBars, 0)
+barSet.second = backtest.getNextBar(newBars, 1)
 for i in range(2, len(newBars)-1):
     if i > 3:
-        data['first'] = data['second']
-        data['second'] = data['third']
-    data['third'] = backtest.getNextBar(newBars, i)
+        barSet.first = barSet.second
+        barSet.second = barSet.third
+    barSet.third = backtest.getNextBar(newBars, i)
 
     # first, see if any positions changed
     for position in positions:
         # wonky use of executed vs amount
-        closed, amount = backtest.checkPosition(data['third'], position)
+        closed, amount = backtest.checkPosition(barSet.third, position)
         if closed:
-            logging.error('closed a position: %.2f %r %s %s', amount, closed, position, data['third'])
+            logging.error('closed a position: %.2f %r %s %s', amount, closed, position, barSet.third)
             totalGainLoss += amount
             if totalFundsInPlay > maxFundsInPlay:
                 maxFundsInPlay = totalFundsInPlay
@@ -84,11 +85,11 @@ for i in range(2, len(newBars)-1):
         # position stays, no changes
 
     # analyze the trade for execution
-    trade = order.Analyze(data, conf)
-    if trade is not None:
-        logging.info('found an order: %s %s', trade, data)
+    trade = order.OrderDetails(barSet.analyze(), conf, c)
+    if trade.buyPrice is not None:
+        logging.info('found an order: %s %s', trade, barSet)
         if len(positions) < trade.config.openPositions:
-            position, amount = backtest.checkTradeExecution(data['third'], trade)
+            position, amount = backtest.checkTradeExecution(barSet.third, trade)
             # check if the trade executed
             if position is not None:
                 logging.error('opened a position: %s', position)
