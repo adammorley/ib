@@ -22,8 +22,6 @@ from market import rand
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=None)
-parser.add_argument('--info', action='store_true', default=None)
-parser.add_argument('--error', action='store_true', default=None)
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument("--duration", default=5, type=int)
 parser.add_argument("--endDate", default='', type=str)
@@ -35,17 +33,12 @@ parser.add_argument('--stopTarget', default=None, type=float)
 args = parser.parse_args()
 
 logLevel = logging.FATAL
-if args.error is not None:
-    logLevel = logging.ERROR
-elif args.info is not None:
-    logLevel = logging.INFO
-elif args.debug is not None:
+if args.debug is not None:
     logLevel = logging.DEBUG
 
 ib = connect.connect(logLevel)
 conf = config.getConfig(args.conf)
 conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget)
-logging.info('config %s', conf)
 
 c = contract.getContract(args.symbol, args.localSymbol)
 contract.qualify(c, ibc)
@@ -74,7 +67,7 @@ for i in range(2, len(newBars)-1):
         # wonky use of executed vs amount
         closed, amount = backtest.checkPosition(barSet.third, position)
         if closed:
-            logging.error('closed a position: %.2f %r %s %s', amount, closed, position, barSet.third)
+            logging.warn('closed a position: %.2f %r %s %s', amount, closed, position, barSet.third)
             totalGainLoss += amount
             if totalFundsInPlay > maxFundsInPlay:
                 maxFundsInPlay = totalFundsInPlay
@@ -85,25 +78,25 @@ for i in range(2, len(newBars)-1):
     # analyze the trade for execution
     trade = order.OrderDetails(barSet.analyze(), conf, c)
     if trade.buyPrice is not None:
-        logging.info('found an order: %s %s', trade, barSet)
+        logging.warn('found an order: %s %s', trade, barSet)
         if len(positions) < trade.config.openPositions:
             position, amount = backtest.checkTradeExecution(barSet.third, trade)
             # check if the trade executed
             if position is not None:
-                logging.error('opened a position: %s', position)
+                logging.warn('opened a position: %s', position)
                 positions.append(position)
                 totalFundsInPlay += position.buyPrice * position.config.qty
             elif position is None and amount is not None:
-                logging.error('opened and closed a position in third bar')
+                logging.warn('opened and closed a position in third bar')
                 totalGainLoss += amount
-            logging.info('totalFundsInPlay: %.2f', totalFundsInPlay)
+            logging.debug('totalFundsInPlay: %.2f', totalFundsInPlay)
 
 r = 0
 if args.symbol == 'ES':
     totalGainLoss=totalGainLoss*50 # es00 futures ticks are 12.5 per tick
 if maxFundsInPlay > 0:
     r = totalGainLoss/maxFundsInPlay*100
-logging.fatal('totalGainLoss: %.2f, maxFundsInPlay: %.2f, return: %.2f', totalGainLoss, maxFundsInPlay, r)
+logging.warn('totalGainLoss: %.2f, maxFundsInPlay: %.2f, return: %.2f', totalGainLoss, maxFundsInPlay, r)
 
 ib.cancelHistoricalData(histBars)
 ib.sleep(1)

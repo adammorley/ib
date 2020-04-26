@@ -58,4 +58,5 @@ def ProcessConfig(conf):
     config.buyOutsideRth = conf['buyOutsideRth']
     config.sellOutsideRth = conf['sellOutsideRth']
 
+    logging.warn('config %s', conf)
     return config

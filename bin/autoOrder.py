@@ -31,7 +31,6 @@ if args.debug:
 
 ibc = connect.connect(logLevel)
 conf = config.getConfig(args.conf)
-logging.info('config %s', conf)
 
 if args.localSymbol:
     c = contract.getContract(args.symbol, args.localSymbol)
@@ -42,7 +41,7 @@ contract.qualify(c, ibc)
 ticker = data.getTicker(c, ibc)
 ibc.sleep(0)
 
-logging.info('running trade loop...')
+logging.warn('running trade loop...')
 barSet = bars.BarSet()
 while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     if barSet.first is None and barSet.second is None:
@@ -63,13 +62,13 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
         makeTrade = True
         for p in positions:
             if p.contract == c and p.position >= conf.qty * conf.openPositions:
-                logging.info('passing on trade as max positions already open')
+                logging.warn('passing on trade as max positions already open')
                 makeTrade = False
         if makeTrade:
             orders = order.CreateBracketOrder(orderDetails)
             trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
+            trade.CheckTradeExecution(trades)
             logging.debug(trades)
-            logging.info('placed a trade')
 
 connect.close(ibc, c)
 sys.exit(0)

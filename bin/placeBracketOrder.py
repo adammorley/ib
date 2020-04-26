@@ -23,13 +23,12 @@ parser.add_argument('--bidIncrement', type=float, default=0.0)
 parser.add_argument('--go', action='store_true', default=None)
 args = parser.parse_args()
 
-logLevel = logging.INFO
+logLevel = logging.WARN
 if args.debug:
     logLevel = logging.DEBUG
 
 ibc = connect.connect(logLevel)
 conf = config.getConfig(args.conf)
-logging.info('config %s', conf)
 
 c = contract.getContract(args.symbol, args.localSymbol)
 contract.qualify(c, ibc)
@@ -40,17 +39,15 @@ if buyPrice < 0: # fetch from market
 
 from market.order import OrderDetails
 orderDetails = OrderDetails(buyPrice, conf, c)
-
-logging.info('created an order for contract %s %s', c, orderDetails)
+logging.warn('created an order for contract %s %s', c, orderDetails)
 
 orders = order.CreateBracketOrder(orderDetails)
-logging.info('created bracket orders %s', orders)
 
 if args.go is not None:
     trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
-    logging.info('trades in flight %s', trades)
+    trade.CheckTradeExecution(trades)
 else:
-    logging.info('would place this order: %s', orders)
+    logging.warn('would place this order: %s', orders)
 
 connect.close(ibc)
 

@@ -105,4 +105,5 @@ def CreateBracketOrder(orderDetails):
         orders.stopOrder.orderType = 'STP'
         orders.stopOrder.auxPrice = stopPrice
 
+    logging.warn('created bracket orders: %s', orders)
     return orders

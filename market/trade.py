@@ -15,13 +15,17 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     #ocaR = ibc.oneCancelsAll(orders=oca, ocaGroup=rand.String(), ocaType=1)
     #logging.info('oca %s, ocaR: %s', oca, ocaR)
 
-    trades = dict()
+    trades = []
+    bos = None
     for orderType, order in orders.__dict__.items():
-        trades[orderType] = ibc.placeOrder(orderDetails.contract, order)
+        t = ibc.placeOrder(orderDetails.contract, order)
+        if orderType == 'buyOrder':
+            bos = t.orderStatus
+        trades.append(t)
     ibc.sleep(0)
 
     n = 0
-    while n < 3 and trades['buyOrder'].orderStatus.status != 'Filled':
+    while n < 3 and bos.status != 'Filled':
         n += 1
         ibc.sleep(1)
         if n > 1:
@@ -30,3 +34,11 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     ibc.sleep(0)
     logging.debug('placed orders')
     return trades
+
+from ib_insync.order import OrderStatus
+def CheckTradeExecution(trades):
+    for trade in trades:
+        if trade.orderStatus.status == OrderStatus.Cancelled:
+            logging.warn('got a canceled trade for %s doing %s %s:    Log: %s', trade.contract.symbol, trade.order.action, trade.order.orderType, trade.log)
+        if trade.order.action == 'BUY' and trade.orderStatus.status != OrderStatus.Filled:
+            logging.warn('BUY order on %s was not filled (outside rth?):    %s', trade.contract.symbol, trade)
