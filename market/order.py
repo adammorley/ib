@@ -55,34 +55,33 @@ class BracketOrder:
 
 def calculateProfitPrice(od):
     if od.config.percents:
-        return od.buyPrice * (100.0 + od.profitPercent)/100.0
+        return od.buyPrice * (100.0 + od.config.profitPercent)/100.0
     else:
         return od.buyPrice + od.config.profitTarget
 
 def calculateLocPrice(od):
     if od.config.percents:
-        return od.buyPrice * (100.0 + od.locPercent)/100.0
+        return od.buyPrice * (100.0 + od.config.locPercent)/100.0
     else:
         return od.buyPrice + od.config.locTarget
 
 def calculateStopPrice(od):
     if od.config.percents:
-        return od.buyPrice * (100.0 - od.stopPercent)/100.0
+        return od.buyPrice * (100.0 - od.config.stopPercent)/100.0
     else:
         return od.buyPrice - od.config.stopTarget
+
+# drops decimal, only whole units
+def calculateQty(od):
+    if od.config.byPrice:
+        od.config.qty = int( od.config.dollarAmt / od.buyPrice )
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 # order matters, see class note
 def CreateBracketOrder(contract, orderDetails):
+    calculateQty(orderDetails)
+
     orders = BracketOrder()
-    orders.buyOrder = Order()
-    orders.buyOrder.transmit = False
-    orders.buyOrder.action = 'BUY'
-    orders.buyOrder.totalQuantity = orderDetails.config.qty
-    orders.buyOrder.orderType = 'LMT'
-    orders.buyOrder.lmtPrice = orderDetails.buyPrice
-    orders.buyOrder.tif = 'DAY'
-    orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
 
     profitPrice = calculateProfitPrice(orderDetails)
     orders.profitOrder = Order()
@@ -104,16 +103,27 @@ def CreateBracketOrder(contract, orderDetails):
     orders.locOrder.tif = 'DAY'
     orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
 
-    stopPrice = calculateStopPrice(orderDetails)
     orders.stopOrder = Order()
-    orders.stopOrder.transmit = True
+    orders.stopOrder.transmit = False
     orders.stopOrder.action = 'SELL'
     orders.stopOrder.totalQuantity = orderDetails.config.qty
-    orders.stopOrder.auxPrice = stopPrice
     orders.stopOrder.tif = 'GTC'
     orders.stopOrder.outsideRth = orderDetails.config.sellOutsideRth
     if orderDetails.config.trail:
         orders.stopOrder.orderType = 'TRAIL'
+        orders.stopOrder.trailingPercent = orderDetails.config.stopPercent
     else:
+        stopPrice = calculateStopPrice(od)
         orders.stopOrder.orderType = 'STP'
+        orders.stopOrder.auxPrice = stopPrice
+
+    orders.buyOrder = Order()
+    orders.buyOrder.transmit = True
+    orders.buyOrder.action = 'BUY'
+    orders.buyOrder.totalQuantity = orderDetails.config.qty
+    orders.buyOrder.orderType = 'LMT'
+    orders.buyOrder.lmtPrice = orderDetails.buyPrice
+    orders.buyOrder.tif = 'DAY'
+    orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
+
     return orders

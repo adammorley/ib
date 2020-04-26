@@ -1,9 +1,12 @@
 ---
 percents: true
 profitPercent: 20
-stopPercent: 5
+stopPercent: 10
 locPercent: 10
 trail: true
+#byPrice: true
+#dollarAmt: 10000
+byPrice: false
 qty: 1
 openPositions: 1
 buyOutsideRth: false

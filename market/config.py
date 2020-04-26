@@ -30,6 +30,8 @@ class Config:
     openPositions: int
     buyOutsideRth: bool
     sellOutsideRth: bool
+    byPrice: bool
+    dollarAmt: float
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
@@ -48,8 +50,13 @@ def ProcessConfig(conf):
         config.stopTarget = conf['stopTarget']
         config.locTarget = conf['locTarget']
 
+    config.byPrice = conf['byPrice']
+    if config.byPrice:
+        config.dollarAmt = conf['dollarAmt']
+    else:
+        config.qty = conf['qty']
+
     config.trail = conf['trail']
-    config.qty = conf['qty']
     config.openPositions = conf['openPositions']
     config.buyOutsideRth = conf['buyOutsideRth']
     config.sellOutsideRth = conf['sellOutsideRth']

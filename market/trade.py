@@ -4,12 +4,17 @@ import sys
 from market import rand
 
 def PlaceBracketTrade(contract, orders, ibc):
+    #oca=[]
     for orderType, order in orders.__dict__.items():
         order.orderId = ibc.client.getReqId()
         if orderType == 'buyOrder':
             continue
         else:
             order.parentId = orders.buyOrder.orderId
+            #oca.append(order)
+
+    #ocaR = ibc.oneCancelsAll(orders=oca, ocaGroup=rand.String(), ocaType=1)
+    #logging.info('oca %s, ocaR: %s', oca, ocaR)
 
     trades = dict()
     for orderType, order in orders.__dict__.items():
