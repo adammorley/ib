@@ -43,3 +43,9 @@ def CheckTradeExecution(trades):
             logging.warn('got a canceled trade for %s doing %s %s:    Log: %s', trade.contract.symbol, trade.order.action, trade.order.orderType, trade.log)
         if trade.order.action == 'BUY' and trade.orderStatus.status != OrderStatus.Filled:
             logging.warn('BUY order on %s was not filled (outside rth?):    %s', trade.contract.symbol, trade)
+        #elif trade.order.action == 'BUY' and trade.orderStatus.status == OrderStatus.Filled:
+        if trade.order.action == 'BUY':
+            ids = []
+            for trade in trades:
+                ids.append( str(trade.orderStatus.permId) )
+            logging.warn('entered a BUY order for %s; perm order IDs: %s',  trade.contract.symbol, ', '.join(ids))
