@@ -45,7 +45,7 @@ orders = order.CreateBracketOrder(orderDetails)
 
 if args.go is not None:
     trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
-    trade.CheckTradeExecution(trades)
+    trade.CheckTradeExecution(trades, orderDetails)
 else:
     logging.warn('would place this order: %s', orders)
 

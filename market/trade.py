@@ -37,15 +37,14 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     logging.debug('placed orders')
     return trades
 
-def CheckTradeExecution(trades):
+def CheckTradeExecution(trades, orderDetails):
+    ids = []
     for trade in trades:
+        ids.append( str(trade.orderStatus.permId) )
         if trade.orderStatus.status == OrderStatus.Cancelled:
             logging.warn('got a canceled trade for %s doing %s %s:    Log: %s', trade.contract.symbol, trade.order.action, trade.order.orderType, trade.log)
         if trade.order.action == 'BUY' and trade.orderStatus.status != OrderStatus.Filled:
             logging.warn('BUY order on %s was not filled (outside rth?):    %s', trade.contract.symbol, trade)
         # FIXME: add thing to detect whether order flowed to get a permanent id or not
-    for trade in trades:
-        ids = []
-        for trade in trades:
-            ids.append( str(trade.orderStatus.permId) )
-        logging.warn('entered a BUY order for %s; perm order IDs: %s',  trade.contract.symbol, ', '.join(ids))
+
+    logging.warn('entered a BUY order for %s; perm order IDs: %s',  orderDetails.contract.symbol, ', '.join(ids))
