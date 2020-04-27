@@ -32,6 +32,11 @@ class BracketOrder:
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
 
+def roundPrice(price):
+    if not float(price):
+        raise RuntimeError('non-float price: %s', str(price))
+    return round(price, 2)
+
 def calculateProfitPrice(od):
     if od.config.percents:
         return od.buyPrice * (100.0 + od.config.profitPercent)/100.0
@@ -67,7 +72,7 @@ def CreateBracketOrder(orderDetails):
     orders.buyOrder.action = 'BUY'
     orders.buyOrder.totalQuantity = orderDetails.config.qty
     orders.buyOrder.orderType = 'LMT'
-    orders.buyOrder.lmtPrice = orderDetails.buyPrice
+    orders.buyOrder.lmtPrice = roundPrice(orderDetails.buyPrice)
     orders.buyOrder.tif = 'DAY'
     orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
 
@@ -77,7 +82,7 @@ def CreateBracketOrder(orderDetails):
     orders.profitOrder.action = 'SELL'
     orders.profitOrder.totalQuantity = orderDetails.config.qty
     orders.profitOrder.orderType = 'LMT'
-    orders.profitOrder.lmtPrice = profitPrice
+    orders.profitOrder.lmtPrice = roundPrice(profitPrice)
     orders.profitOrder.tif = 'GTC'
     orders.profitOrder.outsideRth = orderDetails.config.sellOutsideRth
 
@@ -87,7 +92,7 @@ def CreateBracketOrder(orderDetails):
     orders.locOrder.action = 'SELL'
     orders.locOrder.totalQuantity = orderDetails.config.qty
     orders.locOrder.orderType = 'LOC'
-    orders.locOrder.lmtPrice = locPrice
+    orders.locOrder.lmtPrice = roundPrice(locPrice)
     orders.locOrder.tif = 'DAY'
     orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
 
@@ -103,7 +108,7 @@ def CreateBracketOrder(orderDetails):
     else:
         stopPrice = calculateStopPrice(od)
         orders.stopOrder.orderType = 'STP'
-        orders.stopOrder.auxPrice = stopPrice
+        orders.stopOrder.auxPrice = roundPrice(stopPrice)
 
     logging.warn('created bracket orders: %s', orders)
     return orders

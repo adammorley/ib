@@ -5,7 +5,10 @@ from ib_insync import *
 
 from market import rand
 
-def connect(logLevel):
+def getPort(prod=False):
+    return 4001 if prod else 4002
+
+def connect(logLevel, prod=False):
     util.logToConsole(logLevel)
     ibc = IB()
     connected = False
@@ -13,7 +16,7 @@ def connect(logLevel):
     while not connected and n < 3:
         n += 1
         try:
-            ibc.connect("localhost", 4002, clientId=rand.Int())
+            ibc.connect(host="localhost", port=getPort(prod), clientId=rand.Int())
             ibc.sleep(0.25)
             connected = ibc.isConnected()
         except:
