@@ -22,7 +22,6 @@ from market import rand
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=None)
-parser.add_argument('--warn', action='store_true', default=None)
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument("--duration", default=5, type=int)
 parser.add_argument("--endDate", default='', type=str)
@@ -33,13 +32,7 @@ parser.add_argument('--profitTarget', default=None, type=float)
 parser.add_argument('--stopTarget', default=None, type=float)
 args = parser.parse_args()
 
-logLevel = logging.FATAL
-if args.info is not None:
-    logLevel = logging.WARN
-elif args.debug is not None:
-    logLevel = logging.DEBUG
-
-ib = connect.connect(logLevel)
+ib = connect.connect(args.debug)
 conf = config.getConfig(args.conf)
 conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget)
 

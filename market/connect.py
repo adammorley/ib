@@ -8,8 +8,11 @@ from market import rand
 def getPort(prod=False):
     return 4001 if prod else 4002
 
-def connect(logLevel, prod=False):
-    util.logToConsole(logLevel)
+def connect(debug, prod=False):
+    util.logToConsole(logging.WARN)
+    if debug:
+        util.logToConsole(logging.DEBUG)
+
     ibc = IB()
     connected = False
     n = 0

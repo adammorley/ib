@@ -21,15 +21,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--symbol', type=str, required=True)
 parser.add_argument('--localSymbol', type=str)
 parser.add_argument('--conf', type=str, required=True)
-parser.add_argument('--debug', action='store_true', default=None)
+parser.add_argument('--prod', action='store_true', default=None)
+parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
 startTime = datetime.datetime.utcnow()
-logLevel = logging.INFO
-if args.debug:
-    logLevel = logging.DEBUG
 
-ibc = connect.connect(logLevel)
+ibc = connect.connect(args.debug, args.prod)
 conf = config.getConfig(args.conf)
 
 if args.localSymbol:
@@ -41,7 +39,7 @@ contract.qualify(c, ibc)
 ticker = data.getTicker(c, ibc)
 ibc.sleep(0)
 
-logging.warn('running trade loop...')
+logging.warn('running trade loop for %s...', c.symbol)
 barSet = bars.BarSet()
 while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
     if barSet.first is None and barSet.second is None:
