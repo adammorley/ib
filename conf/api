@@ -1,0 +1,12 @@
+---
+finnhub:
+    token: 'bqj5mj7rh5r89luqscug'
+    baseUrl: 'https://finnhub.io/api/v1'
+    priceTargetUrl: '/stock/price-target?'
+    quoteUrl: '/quote?'
+    key: 'token='
+alphav:
+    apiKey: 'JU4TPE9LFFWYVQW8'
+    baseUrl: 'https://www.alphavantage.co/query?function='
+    dailyUrl: 'TIME_SERIES_DAILY_ADJUSTED&interval=1day&'
+    key: 'apikey='
