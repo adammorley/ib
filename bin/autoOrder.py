@@ -37,7 +37,6 @@ else:
 contract.qualify(c, ibc)
 
 ticker = data.getTicker(c, ibc)
-ibc.sleep(0)
 
 logging.warn('running trade loop for %s...', c.symbol)
 barSet = bars.BarSet()

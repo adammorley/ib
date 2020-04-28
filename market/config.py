@@ -1,7 +1,5 @@
 import logging
-import sys
 import yaml
-from os import path
 
 def getConfig(configFile):
     with open(configFile, 'r') as f:

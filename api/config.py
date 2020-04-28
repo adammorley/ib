@@ -28,4 +28,4 @@ class Config:
         self.avApiKey = conf['alphav']['apiKey']
         self.baseUrl = conf['alphav']['baseUrl']
         self.dailyUrl = self.baseUrl + conf['alphav']['dailyUrl'] + conf['alphav']['key'] + self.avApiKey + '&'
-        logging.warn('config: %s', self)
+        logging.debug('config: %s', self)
