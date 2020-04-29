@@ -27,20 +27,20 @@ def getTicker(c, ibc):
 
 # histData is from getHistData
 # so you can feed like 200 units of histData and get the 50 period sma by passing n = 50
-# index is the index to start from (going backwards)
+# index is the index to start from (going backwards from the end of the [])
 # this allows specifying index = 3 so EMA can be calculated using the most recent full datapoint
 # eg the last bar is still filling, provided one is using keepUpToDate=True (vs False)
 #
-# so:
-# h = data.getHistData(...)
-# v = len(EMA) - 2
-# ema50 = data.EMA(h[v], data.SMA(h, 3, 50), 50)
-# ema200 = data.EMA(h[v], data.SMA(h, 3, 200), 200)
-# if ema50 > ema200:
-#   crossover = True
-# ibc.sleep(60)
-def calcSMA(n, histData, nindex=3):
-    i = len(histData) - nindex
+# to clarify further:
+#
+# histData[end] = currently filling bar (assuming k=True in call to getHistData, which is the default)
+# histData[end-1] = latest data point
+# histData[end-2] = previous full data point
+# end = len(histData)-1
+#
+# so using SMA for the ``first'' EMA is now possible and calculating the EMA at any given time is ok
+def calcSMA(n, histData, index=3):
+    i = len(histData) - index
     j = n
     sma = 0
     while n > 0:
@@ -49,7 +49,7 @@ def calcSMA(n, histData, nindex=3):
         j -= 1
     return sma / n
 
-# exponential moving average (higher weighting recent data
+# exponential moving average (higher weighting recent data)
 #
 #   EMA = (v - sma) * s + sma
 #

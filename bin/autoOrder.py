@@ -21,8 +21,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument('--symbol', type=str, required=True)
 parser.add_argument('--localSymbol', type=str)
-parser.add_argument('--short', type=int) # for ema detector, short moving avg
-parser.add_argument('--long', type=int) # for ema detector, long moving avg
+parser.add_argument('--short', default=None, type=int) # for ema detector, short moving avg
+parser.add_argument('--long', default=None, type=int) # for ema detector, long moving avg
 parser.add_argument('--prod', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
@@ -51,15 +51,15 @@ contract.qualify(c, ibc)
 
 dataStore = None
 dataStream = None
-flag = False
-count = 0
 if conf.detector == 'threeBarPattern':
     dataStream = data.getTicker(c, ibc)
     dataStore = bars.BarSet()
 elif conf.detector == 'emaCrossover':
     dataStream = data.getHistData(c, ibc)
-    curPrice = len(histData) - 2
-    emaShort = data.EMA(histData[curPrice], data.SMA(args.short, histData), args.short)
+    curPriceIndex = len(histData) - 2
+    # FIXME: default is defined in EMA's class; how do we get it here?
+    # maybe do this on initialization?
+    emaShortIndex = data.EMA(histData[curPrice], data.SMA(args.short, histData), args.short)
     emaLong = data.EMA(histData[curPrice], data.SMA(args.long, histData), args.long)
     dataStore = detector.EMA(emaShort, emaLong, args.short, args.long)
 else:
@@ -73,7 +73,7 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
     if conf.detector == 'threeBarPattern':
         buyPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
     elif conf.detector == 'emaCrossover':
-        buyPrice = dataStore.checkForBuy(dataStream, ib.sleep)
+        buyPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
 
     orderDetails = None
     if buyPrice is not None:

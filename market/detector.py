@@ -49,8 +49,10 @@ class EMA:
     longInterval: int = 200
 
     def __init__(self, short, long_, shortInterval, longInterval):
-        self.shortInterval = shortInterval
-        self.longInterval = longInterval
+        if shortInterval is not None:
+            self.shortInterval = shortInterval
+        if longInterval is not None:
+            self.longInterval = longInterval
         self.update(short, long_)
 
     def update(self, short, long_):
