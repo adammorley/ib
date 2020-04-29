@@ -27,6 +27,7 @@ class Config:
     sellOutsideRth: bool
     byPrice: bool
     dollarAmt: float
+    detector: str
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
@@ -55,6 +56,8 @@ def ProcessConfig(conf):
     config.openPositions = conf['openPositions']
     config.buyOutsideRth = conf['buyOutsideRth']
     config.sellOutsideRth = conf['sellOutsideRth']
+
+    config.detector = conf['detector']
 
     logging.warn('config %s', conf)
     return config

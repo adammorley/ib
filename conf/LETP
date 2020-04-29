@@ -5,7 +5,7 @@ stopPercent: 10
 locPercent: 10
 trail: true
 byPrice: true
-dollarAmt: 7500
+dollarAmt: 10000
 byPrice: true
 #qty: 1
 openPositions: 1

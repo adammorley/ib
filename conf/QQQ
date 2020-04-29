@@ -6,6 +6,7 @@ locPercent: 2
 trail: false
 byPrice: true
 dollarAmt: 5000
-openPositions: 1
+openPositions: 2
 buyOutsideRth: false
 sellOutsideRth: true
+detector: threeBarPattern

@@ -4,7 +4,9 @@ profitPercent: 0.69
 stopPercent: 0.18
 locPercent: 0.25
 trail: true
+byPrice: false
 qty: 1
 openPositions: 1
-buyOutsideRth: false
+buyOutsideRth: true
 sellOutsideRth: true
+detector: emaCrossover
