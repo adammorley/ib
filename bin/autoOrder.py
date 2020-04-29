@@ -59,8 +59,8 @@ elif conf.detector == 'emaCrossover':
     curPriceIndex = len(histData) - 2
     # FIXME: default is defined in EMA's class; how do we get it here?
     # maybe do this on initialization?
-    emaShortIndex = data.EMA(histData[curPrice], data.SMA(args.short, histData), args.short)
-    emaLong = data.EMA(histData[curPrice], data.SMA(args.long, histData), args.long)
+    emaShortIndex = data.EMA(histData[curPriceIndex], data.SMA(args.short, histData), args.short)
+    emaLong = data.EMA(histData[curPriceIndex], data.SMA(args.long, histData), args.long)
     dataStore = detector.EMA(emaShort, emaLong, args.short, args.long)
 else:
     raise RuntimeError('do not know what to do!')
