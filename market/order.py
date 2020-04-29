@@ -58,19 +58,20 @@ def calculateStopPrice(od):
 # drops decimal, only whole units
 def calculateQty(od):
     if od.config.byPrice:
-        od.config.qty = int( od.config.dollarAmt / od.buyPrice )
+        return int( od.config.dollarAmt / od.buyPrice )
+    else:
+        return od.config.qty
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 # order matters, see class note
 def CreateBracketOrder(orderDetails):
-    calculateQty(orderDetails)
-
+    qty = calculateQty(orderDetails)
     orders = BracketOrder()
 
     orders.buyOrder = Order()
     orders.buyOrder.transmit = False
     orders.buyOrder.action = 'BUY'
-    orders.buyOrder.totalQuantity = orderDetails.config.qty
+    orders.buyOrder.totalQuantity = qty
     orders.buyOrder.orderType = 'LMT'
     orders.buyOrder.lmtPrice = roundPrice(orderDetails.buyPrice)
     orders.buyOrder.tif = 'DAY'
@@ -80,7 +81,7 @@ def CreateBracketOrder(orderDetails):
     orders.profitOrder = Order()
     orders.profitOrder.transmit = False
     orders.profitOrder.action = 'SELL'
-    orders.profitOrder.totalQuantity = orderDetails.config.qty
+    orders.profitOrder.totalQuantity = qty
     orders.profitOrder.orderType = 'LMT'
     orders.profitOrder.lmtPrice = roundPrice(profitPrice)
     orders.profitOrder.tif = 'GTC'
@@ -90,7 +91,7 @@ def CreateBracketOrder(orderDetails):
     orders.locOrder = Order()
     orders.locOrder.transmit = False
     orders.locOrder.action = 'SELL'
-    orders.locOrder.totalQuantity = orderDetails.config.qty
+    orders.locOrder.totalQuantity = qty
     orders.locOrder.orderType = 'LOC'
     orders.locOrder.lmtPrice = roundPrice(locPrice)
     orders.locOrder.tif = 'DAY'
@@ -99,7 +100,7 @@ def CreateBracketOrder(orderDetails):
     orders.stopOrder = Order()
     orders.stopOrder.transmit = True
     orders.stopOrder.action = 'SELL'
-    orders.stopOrder.totalQuantity = orderDetails.config.qty
+    orders.stopOrder.totalQuantity = qty
     orders.stopOrder.tif = 'GTC'
     orders.stopOrder.outsideRth = orderDetails.config.sellOutsideRth
     if orderDetails.config.trail:

@@ -1,6 +1,11 @@
 #!/usr/bin/python3
 import websocket
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-s','--symbol', action='append', type=str, default=None)
+args = parser.parse_args()
+
 def on_message(ws, message):
     print(message)
 
@@ -11,7 +16,9 @@ def on_close(ws):
     print("### closed ###")
 
 def on_open(ws):
-    ws.send('{"type":"subscribe","symbol":"TQQQ"}')
+    for s in args.symbol:
+        r = '{"type":"subscribe","symbol":"' + s + '"}'
+        ws.send(r)
 
 websocket.enableTrace(True)
 ws = websocket.WebSocketApp("wss://ws.finnhub.io?token=bqj5mj7rh5r89luqscug",

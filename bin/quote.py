@@ -6,9 +6,10 @@ from api import request
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('symbol', type=str, default=None)
+parser.add_argument('-s','--symbol', action='append', type=str, default=None)
 args = parser.parse_args()
 
 req = request.Request(config.Config())
 
-print(req.quote(args.symbol))
+for s in args.symbol:
+    print(req.quote(s))

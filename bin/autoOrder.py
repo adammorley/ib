@@ -25,6 +25,17 @@ parser.add_argument('--prod', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
+def isMaxQty(p, conf):
+    if conf.byPrice:
+        # super wonky: avg cost is avg cost per share
+        # .position is share count
+        # dollarAmt is the max we'll spend
+        # openPositions is the number of amounts
+        #  $25 * 4 sh >= $500 * 2
+        return p.avgCost * p.position >= conf.dollarAmt * conf.openPositions
+    else:
+        return p.position >= conf.qty * conf.openPositions
+
 startTime = datetime.datetime.utcnow()
 
 ibc = connect.connect(args.debug, args.prod)
@@ -58,7 +69,7 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=24):
         ibc.sleep(0)
         makeTrade = True
         for p in positions:
-            if p.contract == c and p.position >= conf.qty * conf.openPositions:
+            if p.contract == c and isMaxQty(p, conf):
                 logging.warn('passing on trade as max positions already open')
                 makeTrade = False
         if makeTrade:

@@ -4,8 +4,8 @@ profitPercent: 4
 stopPercent: 2
 locPercent: 2
 trail: false
-byPrice: false
-qty: 100
-openPositions: 5
+byPrice: true
+dollarAmt: 5000
+openPositions: 1
 buyOutsideRth: false
 sellOutsideRth: true
