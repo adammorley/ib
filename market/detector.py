@@ -57,7 +57,7 @@ class EMA:
         if longInterval is not None:
             self.longInterval = longInterval
         dur = data.barSizeToDuration[barSizeStr]
-        if dur['unit'] != 'S' or not dur['value'] or type(dur['value']) != int:
+        if dur['unit'] != 'S' or not dur['value'] or not isinstance(dur['value'], int):
             raise RuntimeError('re-factor')
         self.sleepTime = dur['value']
 
@@ -85,7 +85,7 @@ class EMA:
         long_ = 0
         logging.info('datastream is {}'.format(len(dataStream)))
         for interval in [self.shortInterval, self.longInterval]:
-            # first we calculate the SMA over the longInterval one longInterval back in the dataStream
+            # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
             tailOffset = len(dataStream) - 1 - interval - 2 # See note in data.SMA
             sma = data.calcSMA(interval, dataStream, tailOffset)
             logging.info('calculated sma of {} for {} at {}'.format(sma, interval, tailOffset))

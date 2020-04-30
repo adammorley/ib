@@ -8,7 +8,7 @@ import logging
 barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
 def getHistData(c, ibc, barSizeStr, longInterval, e='', t='MIDPOINT', r=False, f=2, k=True):
     duration = barSizeToDuration[barSizeStr]
-    if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or type(duration['value']) != int:
+    if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
         raise RuntimeError('using seconds is supported')
     durationStr = str(duration['value'] * longInterval * 2 + 5 * duration['value']) + ' ' + duration['unit']
     logging.info('getting historical data for c:{}/{}, e:{}, d:{}, b:{}, w:{}, u:{}, f:{}, k:{}'.format(c.symbol, c.localSymbol, e, durationStr, barSizeStr, t, r, f, k))
@@ -59,7 +59,7 @@ def calcSMA(n, histData, tailOffset=3):
 
 # exponential moving average (higher weighting recent data)
 #
-#   EMA = (v - sma) * s + sma
+#   EMA = (v - prevEMA) * s + prevEMA
 #
 #       s = (2/ (n+1) ) [smoothing factor, weighting more toward recent prices)
 #

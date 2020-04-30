@@ -44,7 +44,7 @@ startTime = datetime.datetime.utcnow()
 ibc = connect.connect(args.debug, args.prod)
 if args.info:
     util.logToConsole(logging.INFO)
-conf = config.getConfig(args.conf, True)
+conf = config.getConfig(args.conf, autoOrder=True)
 
 if args.localSymbol:
     c = contract.getContract(args.symbol, args.localSymbol)
@@ -83,9 +83,9 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
             logging.debug('got a NaN %s', e)
 
     if orderDetails is not None:
+        makeTrade = True
         positions = ibc.positions()
         ibc.sleep(0)
-        makeTrade = True
         for p in positions:
             if p.contract == c and isMaxQty(p, conf):
                 logging.warn('passing on trade as max positions already open')
