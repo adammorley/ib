@@ -1,6 +1,6 @@
 import logging
 
-from ib_insync.order import Contract
+from ib_insync.contract import Contract
 from market.config import Config
 class OrderDetails:
     buyPrice: float = None

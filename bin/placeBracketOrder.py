@@ -15,7 +15,7 @@ from market import trade
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--symbol', type=str, required=True)
-parser.add_argument('--localSymbol', type=str)
+parser.add_argument('--localSymbol', type=str, default=None)
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument('--limitPrice', type=float, default=-1.0)
 parser.add_argument('--bidIncrement', type=float, default=0.0)

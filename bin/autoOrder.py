@@ -20,7 +20,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument('--symbol', type=str, required=True)
-parser.add_argument('--localSymbol', type=str)
+parser.add_argument('--localSymbol', type=str, default=None)
 #parser.add_argument('--short', default=None, type=int) # for ema detector, short moving avg
 #parser.add_argument('--long', default=None, type=int) # for ema detector, long moving avg
 parser.add_argument('--prod', action='store_true', default=None)

@@ -118,7 +118,6 @@ class EMA:
         sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
         self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        #if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
         if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True
             self.countOfCrossedIntervals = 0
