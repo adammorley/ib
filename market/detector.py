@@ -38,8 +38,8 @@ def threeBarPattern(barSet, ticker, sleepFunc):
 # EMA tracks two expoential moving averages
 # a long and a short
 class EMA:
-    short: float
-    long_: float
+    short: float = 0
+    long_: float = 0
     isCrossed: bool = None
     previousState: bool = None
     stateChanged: bool = None
@@ -47,41 +47,91 @@ class EMA:
     countOfCrossedIntervals: int = 0
     shortInterval: int = 50
     longInterval: int = 200
+    barSizeStr: str = None
+    sleepTime: int = None
 
-    def __init__(self, short, long_, shortInterval, longInterval):
+
+    def __init__(self, barSizeStr, shortInterval=None, longInterval=None):
         if shortInterval is not None:
             self.shortInterval = shortInterval
         if longInterval is not None:
             self.longInterval = longInterval
-        self.update(short, long_)
+        dur = data.barSizeToDuration[barSizeStr]
+        if dur['unit'] != 'S' or not dur['value'] or type(dur['value']) != int:
+            raise RuntimeError('re-factor')
+        self.sleepTime = dur['value']
+
+    def __repr__(self):
+        pieces = []
+        for k, v in self.__dict__.items():
+            pieces.append('{}:{}'.format(k, v))
+        return ','.join(pieces)
 
     def update(self, short, long_):
-        if isCrossed is not None:
+        if self.isCrossed is not None:
             self.previousState = self.isCrossed
         self.short = short
-        self.logn = long_
+        self.long = long_
         self.isCrossed = True if self.short > self.long else False
-        if isCrossed is not None and previousState is not None:
+        if self.isCrossed is not None and self.previousState is not None:
             if self.isCrossed != self.previousState:
                 self.stateChanged = True
             else:
                 self.stateChanged = False
+        logging.info('updated ema: %s', self)
+
+    def calcInitEMAs(self, dataStream):
+        short = 0
+        long_ = 0
+        logging.info('datastream is {}'.format(len(dataStream)))
+        for interval in [self.shortInterval, self.longInterval]:
+            # first we calculate the SMA over the longInterval one longInterval back in the dataStream
+            tailOffset = len(dataStream) - 1 - interval - 2 # See note in data.SMA
+            sma = data.calcSMA(interval, dataStream, tailOffset)
+            logging.info('calculated sma of {} for {} at {}'.format(sma, interval, tailOffset))
+
+            prevEMA = sma
+            ema = 0
+            index = len(dataStream) - 1 - interval - 1 # See note in data.SMA
+            for point in range(0, interval):
+                curPrice = dataStream[index].close
+                ema = data.calcEMA(curPrice, prevEMA, interval)
+                prevEMA = ema
+                index += 1
+            logging.info('calculated ema for {} as {}'.format(interval, ema))
+            if interval == self.shortInterval:
+                short = ema
+            elif interval == self.longInterval:
+                long_ = ema
+        self.update(short, long_)
+
+    def recalcEMAs(self, dataStream):
+        curPriceIndex = len(dataStream) - 2 # See note in data.SMA
+        curPrice = dataStream[curPriceIndex].close
+        logging.info('recalculating emas at index {} using last minutes price of {}'.format(curPriceIndex, curPrice))
+        short = data.calcEMA(curPrice, self.short, self.shortInterval)
+        long_ = data.calcEMA(curPrice, self.long, self.longInterval)
+        self.update(short, long_)
 
     def checkForBuy(self, dataStream, sleepFunc):
-        sleepFunc(60) # if you change this, be sure to understand the call to data.getHistData and the p argument
-        emaShort, emaLong = data.getEMA(dataStream, self.shortInterval, self.longInterval)
-        self.update(emaShort, emaLong)
+        logging.info('waiting for data to check for buy...')
+        sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
+        self.recalcEMAs(dataStream)
+        logging.info('before checks: %s', self)
         if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True
             self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-        elif self.areWatching and not self.stateChanged and ema.isCrossed: # watching, and it's staying set
+        elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
+        logging.info('after checks: %s', self)
     
-        if self.areWatching and self.countOfCrossedIntervals > 5: # FIXME: what happens if 60 seconds above and 1 min default in data.getHistData change?
+        if self.areWatching and self.countOfCrossedIntervals > 5:
             self.areWatching = False
             self.countOfCrossedIntervals = 0
             marketPriceIndex = len(dataStream) - 1 # See note in data module for SMA
-            return dataStream[marketPriceIndex].marketPrice() # buyPrice
+            marketPrice = dataStream[marketPriceIndex].marketPrice()
+            logging.info('returning a buy at index {} of {} for {}'.format(marketPriceIndex, marketPrice, self))
+            return marketPrice # buyPrice

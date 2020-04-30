@@ -19,7 +19,8 @@ class Request:
 
     def makeRequest(self, url):
         r = requests.get(url)
-        assert r.status_code == 200, 'got non-200'
+        if r.status_code != 200:
+            raise RuntimeError('got a non-200')
         try:
             return r.json()
         except JSONDecodeError:

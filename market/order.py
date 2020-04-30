@@ -87,15 +87,16 @@ def CreateBracketOrder(orderDetails):
     orders.profitOrder.tif = 'GTC'
     orders.profitOrder.outsideRth = orderDetails.config.sellOutsideRth
 
-    locPrice = calculateLocPrice(orderDetails)
-    orders.locOrder = Order()
-    orders.locOrder.transmit = False
-    orders.locOrder.action = 'SELL'
-    orders.locOrder.totalQuantity = qty
-    orders.locOrder.orderType = 'LOC'
-    orders.locOrder.lmtPrice = roundPrice(locPrice)
-    orders.locOrder.tif = 'DAY'
-    orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
+    if orderDetails.config.locOrder:
+        locPrice = calculateLocPrice(orderDetails)
+        orders.locOrder = Order()
+        orders.locOrder.transmit = False
+        orders.locOrder.action = 'SELL'
+        orders.locOrder.totalQuantity = qty
+        orders.locOrder.orderType = 'LOC'
+        orders.locOrder.lmtPrice = roundPrice(locPrice)
+        orders.locOrder.tif = 'DAY'
+        orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
 
     orders.stopOrder = Order()
     orders.stopOrder.transmit = True

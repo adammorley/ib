@@ -2,6 +2,7 @@
 percents: true
 profitPercent: 4
 stopPercent: 2
+locOrder: true
 locPercent: 2
 trail: false
 byPrice: true

@@ -2,12 +2,11 @@
 percents: true
 profitPercent: 20
 stopPercent: 10
+locOrder: true
 locPercent: 10
 trail: true
 byPrice: true
-dollarAmt: 10000
-byPrice: true
-#qty: 1
+dollarAmt: 5000
 openPositions: 1
 buyOutsideRth: false
 sellOutsideRth: true

@@ -3,8 +3,16 @@ import logging
 # defaults to getting auto-updated midpoint (bid/ask middle) outside regular trading hours for > 200 minutes with 1 min segments
 # using utc timezones.  the final datapoint is the current minute, so len(histData)-2 is full last minute while -3 is prior window
 # can feed to EMA and SMA to get the EMA on the fly
-def getHistData(c, ibc, e='', d=12300, p='1 min', t='MIDPOINT', r=False, f=2, k=True):
-    histData = ibc.reqHistoricalData(contract=c, endDate=e, durationStr=str(d)+' S', barSizeSetting=p, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)
+#
+# duration (d) is specified in number of barSizes via lookupDuration
+barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
+def getHistData(c, ibc, barSizeStr, longInterval, e='', t='MIDPOINT', r=False, f=2, k=True):
+    duration = barSizeToDuration[barSizeStr]
+    if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or type(duration['value']) != int:
+        raise RuntimeError('using seconds is supported')
+    durationStr = str(duration['value'] * longInterval * 2 + 5 * duration['value']) + ' ' + duration['unit']
+    logging.info('getting historical data for c:{}/{}, e:{}, d:{}, b:{}, w:{}, u:{}, f:{}, k:{}'.format(c.symbol, c.localSymbol, e, durationStr, barSizeStr, t, r, f, k))
+    histData = ibc.reqHistoricalData(contract=c, endDateTime=e, durationStr=durationStr, barSizeSetting=barSizeStr, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)
     return histData
 
 def getMarketPrice(ticker):
@@ -28,7 +36,7 @@ def getTicker(c, ibc):
 # histData is from getHistData
 # so you can feed like 200 units of histData and get the 50 period sma by passing n = 50
 # index is the index to start from (going backwards from the end of the [])
-# this allows specifying index = 3 so EMA can be calculated using the most recent full datapoint
+# this allows specifying tailOffset = 3 so EMA can be calculated using the most recent full datapoint
 # eg the last bar is still filling, provided one is using keepUpToDate=True (vs False)
 #
 # to clarify further:
@@ -39,11 +47,11 @@ def getTicker(c, ibc):
 # end = len(histData)-1
 #
 # so using SMA for the ``first'' EMA is now possible and calculating the EMA at any given time is ok
-def calcSMA(n, histData, index=3):
-    i = len(histData) - index
+def calcSMA(n, histData, tailOffset=3):
+    i = len(histData) - tailOffset
     j = n
     sma = 0
-    while n > 0:
+    while j > 0:
         sma += histData[i].close
         i -= 1
         j -= 1
@@ -59,12 +67,6 @@ def calcSMA(n, histData, index=3):
 #
 #       the first calculation is using the sma as the previous ema
 #           since we have historical data, we can just calculate the sma on the fly and use i
-def calcEMA(v, sma, n):
+def calcEMA(v, prevEMA, n):
     s = (2/ (n+1) )
-    return (v - sma) * s + sma
-
-def getEMA(histData, shortInterval, longInterval):
-    curPriceIndex = len(histData) - 2 # See note in data module for SMA
-    emaShort = calcEMA(histData[curPriceIndex], calcSMA(shortInterval, histData), shortInterval)
-    emaLong = calcEMA(histData[curPriceIndex], calcSMA(longInterval, histData), longInterval)
-    return emaShort, emaLong
+    return (v - prevEMA) * s + prevEMA

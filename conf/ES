@@ -1,8 +1,8 @@
 ---
 percents: true
-profitPercent: 0.69
-stopPercent: 0.18
-locPercent: 0.25
+profitPercent: 1
+stopPercent: 0.2
+locOrder: false
 trail: true
 byPrice: false
 qty: 1

@@ -9,15 +9,17 @@ def parseOpenHours(cd):
 
 # parse the timezoneId
 def parseTimezone(timeZoneId):
-    assert isinstance(timeZoneId, str), 'timeZoneId should be a string'
+    if not isinstance(timeZoneId, str):
+        raise RuntimeError('timeZoneId should be a string')
     for tz in pytz.all_timezones:
         if tz == timeZoneId:
             return pytz.timezone(tz)
-    assert False, 'timeZoneId must be a valid timezone'
+    raise RuntimeError('not reachable')
 
 # parse the contract details into datetime objects
 def parseTradingHours(tradingHours, tz):
-    assert isinstance(tradingHours, str), 'trading hours is a string'
+    if not isinstance(tradingHours, str):
+        raise RuntimeError('trading hours is a string')
     openHours = []
     # '20200427:0930-20200427:1600;20200428:0930-20200428:1600'
     ranges = tradingHours.split(';')
@@ -26,11 +28,13 @@ def parseTradingHours(tradingHours, tz):
         if m.match(range_): # skip closed days
             continue
         ts = range_.split('-')
-        #assert len(ts) == 2, 'only two timestamps per range'
+        if len(ts) != 2:
+            raise RuntimeError('only two timestamps per range')
         start = datetime.strptime(ts[0], '%Y%m%d:%H%M')
         end = datetime.strptime(ts[1], '%Y%m%d:%H%M')
         r = DateTimeRange(start.replace(tzinfo=tz), end.replace(tzinfo=tz))
-        assert r.is_valid_timerange()
+        if not r.is_valid_timerange():
+            raise RuntimeError('should get a valid timerange')
         openHours.append(r)
     return openHours
 

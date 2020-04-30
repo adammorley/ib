@@ -21,10 +21,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument('--symbol', type=str, required=True)
 parser.add_argument('--localSymbol', type=str)
-parser.add_argument('--short', default=None, type=int) # for ema detector, short moving avg
-parser.add_argument('--long', default=None, type=int) # for ema detector, long moving avg
+#parser.add_argument('--short', default=None, type=int) # for ema detector, short moving avg
+#parser.add_argument('--long', default=None, type=int) # for ema detector, long moving avg
 parser.add_argument('--prod', action='store_true', default=None)
-parser.add_argument('--debug', action='store_true')
+parser.add_argument('--debug', action='store_true', default=None)
+parser.add_argument('--info', action='store_true', default=None)
 args = parser.parse_args()
 
 def isMaxQty(p, conf):
@@ -41,7 +42,9 @@ def isMaxQty(p, conf):
 startTime = datetime.datetime.utcnow()
 
 ibc = connect.connect(args.debug, args.prod)
-conf = config.getConfig(args.conf)
+if args.info:
+    util.logToConsole(logging.INFO)
+conf = config.getConfig(args.conf, True)
 
 if args.localSymbol:
     c = contract.getContract(args.symbol, args.localSymbol)
@@ -55,13 +58,10 @@ if conf.detector == 'threeBarPattern':
     dataStream = data.getTicker(c, ibc)
     dataStore = bars.BarSet()
 elif conf.detector == 'emaCrossover':
-    dataStream = data.getHistData(c, ibc)
-    curPriceIndex = len(histData) - 2
-    # FIXME: default is defined in EMA's class; how do we get it here?
-    # maybe do this on initialization?
-    emaShortIndex = data.EMA(histData[curPriceIndex], data.SMA(args.short, histData), args.short)
-    emaLong = data.EMA(histData[curPriceIndex], data.SMA(args.long, histData), args.long)
-    dataStore = detector.EMA(emaShort, emaLong, args.short, args.long)
+    barSizeStr = '1 min'
+    dataStore = detector.EMA(barSizeStr)
+    dataStream = data.getHistData(c, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
+    dataStore.calcInitEMAs(dataStream)
 else:
     raise RuntimeError('do not know what to do!')
 
