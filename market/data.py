@@ -6,13 +6,19 @@ import logging
 #
 # duration (d) is specified in number of barSizes via lookupDuration
 barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
-def getHistData(c, ibc, barSizeStr, longInterval, e='', t='MIDPOINT', r=False, f=2, k=True):
-    duration = barSizeToDuration[barSizeStr]
-    if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
-        raise RuntimeError('using seconds is supported')
-    durationStr = str(duration['value'] * longInterval * 2 + 5 * duration['value']) + ' ' + duration['unit']
-    logging.info('getting historical data for c:{}/{}, e:{}, d:{}, b:{}, w:{}, u:{}, f:{}, k:{}'.format(c.symbol, c.localSymbol, e, durationStr, barSizeStr, t, r, f, k))
-    histData = ibc.reqHistoricalData(contract=c, endDateTime=e, durationStr=durationStr, barSizeSetting=barSizeStr, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)
+def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=True):
+    durationStr = ''
+    if d is not None:
+        durationStr = str(d)+' D'
+    else:
+        duration = barSizeToDuration[barSizeStr]
+        if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
+            raise RuntimeError('using seconds is supported')
+        else:
+            durationStr = str(duration['value'] * longInterval * 2 + 5 * duration['value']) + ' ' + duration['unit']
+
+    logging.info('getting historical data for c:{}/{}, e:{}, d:{}, b:{}, w:{}, u:{}, f:{}, k:{}'.format(wc.symbol, wc.localSymbol, e, durationStr, barSizeStr, t, r, f, k))
+    histData = ibc.reqHistoricalData(contract=wc.contract, endDateTime=e, durationStr=durationStr, barSizeSetting=barSizeStr, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)
     return histData
 
 def getMarketPrice(ticker):
@@ -21,15 +27,15 @@ def getMarketPrice(ticker):
         raise FloatingPointError('got floating point which is NaN')
     return mp
 
-def getTick(c, ibc):
-    tick = ibc.reqMktData(contract=c, genericTickList='', snapshot=True, regulatorySnapshot=False)
+def getTick(wc, ibc):
+    tick = ibc.reqMktData(contract=wc.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
     ibc.sleep(1)
     ibc.cancelMktData(contract=c)
     ibc.sleep(0)
     return tick
 
-def getTicker(c, ibc):
-    ticker = ibc.reqMktData(contract=c, genericTickList='', snapshot=False, regulatorySnapshot=False)
+def getTicker(wc, ibc):
+    ticker = ibc.reqMktData(contract=wc.contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
     ibc.sleep(0)
     return ticker
 

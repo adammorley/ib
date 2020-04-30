@@ -24,8 +24,8 @@ def r(f):
 
 ibc = connect.connect(False)
 util.logToConsole(logging.FATAL)
-tqqq = contract.getContract('TQQQ')
-ticker = data.getTicker(tqqq, ibc)
+wc = contract.wContract(ibc, 'TQQQ')
+ticker = data.getTicker(wc, ibc)
 
 req = request.Request(config.Config())
 

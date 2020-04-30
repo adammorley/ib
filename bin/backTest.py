@@ -22,6 +22,7 @@ from market import rand
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=None)
+parser.add_argument('--info', action='store_true', default=None)
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument("--duration", default=5, type=int)
 parser.add_argument("--endDate", default='', type=str)
@@ -32,16 +33,16 @@ parser.add_argument('--profitTarget', default=None, type=float)
 parser.add_argument('--stopTarget', default=None, type=float)
 args = parser.parse_args()
 
-ib = connect.connect(args.debug)
+ibc = connect.connect(args.debug)
+if args.info:
+    util.logToConsole(logging.INFO)
 conf = config.getConfig(args.conf)
 conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget)
 
-c = contract.getContract(args.symbol, args.localSymbol)
-contract.qualify(c, ibc)
+wc = contract.wContract(ibc, args.symbol, args.localSymbol)
 
 useRth = False if conf.buyOutsideRth else True
-histBars = ib.reqHistoricalData(c, endDateTime=args.endDate, durationStr=str(args.duration)+' D', barSizeSetting=args.tickSize, whatToShow='TRADES', useRTH=useRth, formatDate=2)
-ib.sleep(1)
+histBars = data.getHistData(wc=wc, ibc=ibc, barSizeStr=args.tickSize, longInterval=None, e=args.endDate, d=args.duration, t='TRADES', r=useRth, f=2, k=False)
 newBars = backtest.anotateBars(histBars)
 
 barSet = bars.BarSet()
@@ -72,11 +73,13 @@ for i in range(2, len(newBars)-1):
         # position stays, no changes
 
     # analyze the trade for execution
-    trade = order.OrderDetails(barSet.analyze(), conf, c)
+    trade = order.OrderDetails(barSet.analyze(), conf, wc)
     if trade.buyPrice is not None:
+        trade.config.qty = order.calculateQty(trade)
         logging.warn('found an order: %s %s', trade, barSet)
         if len(positions) < trade.config.openPositions:
             position, amount = backtest.checkTradeExecution(barSet.third, trade)
+            logging.warn('position config %s', position.config)
             # check if the trade executed
             if position is not None:
                 logging.warn('opened a position: %s', position)
@@ -94,8 +97,7 @@ if maxFundsInPlay > 0:
     r = totalGainLoss/maxFundsInPlay*100
 logging.warn('totalGainLoss: %.2f, maxFundsInPlay: %.2f, return: %.2f', totalGainLoss, maxFundsInPlay, r)
 
-ib.cancelHistoricalData(histBars)
-ib.sleep(1)
-ib.disconnect()
+ibc.cancelHistoricalData(histBars)
+connect.close(ibc)
 
 sys.exit(0)

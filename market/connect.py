@@ -29,9 +29,9 @@ def connect(debug=None, prod=False):
         raise RuntimeError('could not connect')
     return ibc
 
-def close(ibc, c=None):
-    if c is not None:
-        ibc.cancelMktData(c)
+def close(ibc, wc=None):
+    if wc is not None:
+        ibc.cancelMktData(wc.contract)
         ibc.sleep(0)
     ibc.disconnect()
     ibc.sleep(0)

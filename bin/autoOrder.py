@@ -46,28 +46,24 @@ if args.info:
     util.logToConsole(logging.INFO)
 conf = config.getConfig(args.conf, autoOrder=True)
 
-if args.localSymbol:
-    c = contract.getContract(args.symbol, args.localSymbol)
-else:
-    c = contract.getContract(args.symbol, None)
-contract.qualify(c, ibc)
+wc = contract.wContract(ibc, args.symbol, args.localSymbol)
 
 dataStore = None
 dataStream = None
 if conf.detector == 'threeBarPattern':
-    dataStream = data.getTicker(c, ibc)
+    dataStream = data.getTicker(wc, ibc)
     dataStore = bars.BarSet()
 elif conf.detector == 'emaCrossover':
     barSizeStr = '1 min'
     dataStore = detector.EMA(barSizeStr)
-    dataStream = data.getHistData(c, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
+    dataStream = data.getHistData(wc, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
     dataStore.calcInitEMAs(dataStream)
 else:
     raise RuntimeError('do not know what to do!')
 
 # what we really want is to extract the "I detected a reason to buy contract n at bar y with reuqirements z"
 # and add the es one as well.
-logging.warn('running trade loop for %s...', c.symbol)
+logging.warn('running trade loop for %s...', wc.symbol)
 while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
     buyPrice = None
     if conf.detector == 'threeBarPattern':
@@ -78,7 +74,7 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
     orderDetails = None
     if buyPrice is not None:
         try:
-            orderDetails = order.OrderDetails(buyPrice, conf, c)
+            orderDetails = order.OrderDetails(buyPrice, conf, wc)
         except FloatingPointError as e:
             logging.debug('got a NaN %s', e)
 
@@ -87,7 +83,7 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
         positions = ibc.positions()
         ibc.sleep(0)
         for p in positions:
-            if p.contract == c and isMaxQty(p, conf):
+            if p.contract == wc.contract and isMaxQty(p, conf):
                 logging.warn('passing on trade as max positions already open')
                 makeTrade = False
 
@@ -97,5 +93,5 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
             trade.CheckTradeExecution(trades, orderDetails)
             logging.debug(trades)
 
-connect.close(ibc, c)
+connect.close(ibc, wc.contract)
 sys.exit(0)

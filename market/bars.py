@@ -30,7 +30,7 @@ class Bar:
             self.high = self.close
 
     def anotate(self):
-        self.selfSize = abs(self.open - self.close)
+        self.barSize = abs(self.open - self.close)
         self.lineSize = abs(self.high - self.low)
         if self.open < self.close:
             self.color = 'G'
@@ -52,25 +52,16 @@ class BarSet:
         return ','.join(pieces)
 
     def analyze(self):
+        byPrice = None
         if self.first.color == 'X' or self.second.color == 'X' or self.third.color == 'X':
             logging.debug('got a partial bar')
-            return None
-        if not self.first.color == 'G':
-            return None
-        if not self.second.color == 'R':
-            return None
-        if not self.third.color == 'G':
-            return None
-        if not self.second.barSize < 0.2 * self.first.barSize:
-            return None
-        if not self.second.barSize < 0.5 * self.third.barSize:
-            return None
-        if not self.third.barSize > self.second.barSize:
-            return None
-    
-        buyPrice = self.third.close
-        if buyPrice != buyPrice:
-            raise FloatingPointError('got floating point which is NaN')
-    
-        logging.debug('found a potential buy point: %d, %s', buyPrice)
+        #FIXME: the bar size testing seems to have a large impact on not entering, to the detriment of the return
+        elif not self.first.color == 'G' and not self.second.color == 'R' and not self.third.color == 'G' and not self.second.barSize < 0.3 * self.first.barSize and not self.second.barSize < 0.5 * self.third.barSize and not self.third.barSize > self.second.barSize:
+            buyPrice = None
+        else:
+            buyPrice = self.third.close
+            if buyPrice != buyPrice:
+                raise FloatingPointError('got floating point which is NaN')
+        
+            logging.info('found a potential buy point: %d', buyPrice)
         return buyPrice

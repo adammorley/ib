@@ -27,16 +27,15 @@ args = parser.parse_args()
 ibc = connect.connect(args.debug, args.prod)
 conf = config.getConfig(args.conf)
 
-c = contract.getContract(args.symbol, args.localSymbol)
-contract.qualify(c, ibc)
+wc = contract.wContract(ibc, args.symbol, args.localSymbol)
 
 buyPrice = args.limitPrice
 if buyPrice < 0: # fetch from market
-    buyPrice = args.bidIncrement + data.getMarketPrice(data.getTick(c, ibc))
+    buyPrice = args.bidIncrement + data.getMarketPrice(data.getTick(wc, ibc))
 
 from market.order import OrderDetails
-orderDetails = OrderDetails(buyPrice, conf, c)
-logging.warn('created an order for contract %s %s', c, orderDetails)
+orderDetails = OrderDetails(buyPrice, conf, wc)
+logging.warn('created an order for contract %s %s', wc.contract, orderDetails)
 
 orders = order.CreateBracketOrder(orderDetails)
 

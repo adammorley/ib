@@ -1,16 +1,16 @@
 import logging
 
-from ib_insync.contract import Contract
+from market.contract import wContract
 from market.config import Config
 class OrderDetails:
     buyPrice: float = None
     config: Config
-    contract: Contract
+    wContract: wContract
 
-    def __init__(self, buyPrice, config, contract):
+    def __init__(self, buyPrice, config, wContract):
         self.buyPrice = buyPrice
         self.config = config
-        self.contract = contract
+        self.wContract = wContract
 
     def __repr__(self):
         pieces = []

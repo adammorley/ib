@@ -127,10 +127,6 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        if not self.areWatching and self.isCrossed: # FIXME: hack
-            self.areWatching=True
-            self.countOfCrossedIntervals=1
-            logging.fatal('HACK: forcing buy')
     
         if self.areWatching and self.countOfCrossedIntervals > 5:
             self.areWatching = False

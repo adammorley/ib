@@ -20,7 +20,7 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     trades = []
     bos = None
     for orderType, order in orders.__dict__.items():
-        t = ibc.placeOrder(orderDetails.contract, order)
+        t = ibc.placeOrder(orderDetails.wContract.contract, order)
         if orderType == 'buyOrder':
             bos = t.orderStatus
         trades.append(t)
@@ -47,4 +47,4 @@ def CheckTradeExecution(trades, orderDetails):
             logging.warn('BUY order on %s was not filled (outside rth?):    %s', trade.contract.symbol, trade)
         # FIXME: add thing to detect whether order flowed to get a permanent id or not
 
-    logging.warn('entered a BUY order for %s; perm order IDs: %s',  orderDetails.contract.symbol, ', '.join(ids))
+    logging.warn('entered a BUY order for %s; perm order IDs: %s',  orderDetails.wContract.symbol, ', '.join(ids))
