@@ -8,7 +8,7 @@ from market import rand
 def getPort(prod=False):
     return 4001 if prod else 4002
 
-def connect(debug, prod=False):
+def connect(debug=None, prod=False):
     util.logToConsole(logging.WARN)
     if debug:
         util.logToConsole(logging.DEBUG)

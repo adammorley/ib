@@ -1,9 +1,9 @@
 ---
 percents: true
-profitPercent: 20
-stopPercent: 10
+profitPercent: 10
+stopPercent: 5
 locOrder: true
-locPercent: 10
+locPercent: 8
 trail: true
 byPrice: true
 dollarAmt: 5000

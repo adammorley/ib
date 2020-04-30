@@ -118,6 +118,7 @@ class EMA:
         sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
         self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
+        #if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
         if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True
             self.countOfCrossedIntervals = 0
@@ -127,11 +128,15 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
+        if not self.areWatching and self.isCrossed: # FIXME: hack
+            self.areWatching=True
+            self.countOfCrossedIntervals=1
+            logging.fatal('HACK: forcing buy')
     
         if self.areWatching and self.countOfCrossedIntervals > 5:
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-            marketPriceIndex = len(dataStream) - 1 # See note in data module for SMA
-            marketPrice = dataStream[marketPriceIndex].marketPrice()
-            logging.info('returning a buy at index {} of {} for {}'.format(marketPriceIndex, marketPrice, self))
-            return marketPrice # buyPrice
+            closePriceIndex = len(dataStream) - 1 # See note in data module for SMA
+            closePrice = dataStream[closePriceIndex].close
+            logging.info('returning a buy at index {} of {} for {}'.format(closePriceIndex, closePrice, self))
+            return closePrice # buyPrice
