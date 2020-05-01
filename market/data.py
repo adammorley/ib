@@ -5,6 +5,7 @@ import logging
 # can feed to EMA and SMA to get the EMA on the fly
 #
 # duration (d) is specified in number of barSizes via lookupDuration
+# FIXME: this kind of sucks
 barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
 def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=True):
     durationStr = ''

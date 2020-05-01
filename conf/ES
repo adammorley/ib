@@ -1,7 +1,7 @@
 ---
 percents: true
 profitPercent: 1
-stopPercent: 0.2
+stopPercent: 0.5
 locOrder: false
 trail: true
 byPrice: false

@@ -45,11 +45,11 @@ class EMA:
     stateChanged: bool = None
     areWatching: bool = None
     countOfCrossedIntervals: int = 0
+    watchCount: int = 15 # barSizeSetting intervals
     shortInterval: int = 50
     longInterval: int = 200
     barSizeStr: str = None
     sleepTime: int = None
-
 
     def __init__(self, barSizeStr, shortInterval=None, longInterval=None):
         if shortInterval is not None:
@@ -113,25 +113,35 @@ class EMA:
         long_ = data.calcEMA(curPrice, self.long, self.longInterval)
         self.update(short, long_)
 
+    # the rules for buying:
+    #
+    #   if the short-term ema is above the long-term ema for n minutes where n > 15 after crossing
+    #   if the current interval's price drops below the long ema, do not enter (weak momo)
+    #   if the market opened less than 15 minutes ago, we're just going to ignore signals
     def checkForBuy(self, dataStream, sleepFunc):
         logging.info('waiting for data to check for buy...')
         sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
+
         self.recalcEMAs(dataStream)
+        curClosePriceIndex = len(dataStream) - 1 # See note in data module for SMA
+        curClosePrice = dataStream[curClosePriceIndex].close
+        logging.info('current price/index: {}/{}'.format(curClosePriceIndex, curClosePrice))
+
         logging.info('before checks: %s', self)
-        if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+        if date.marketOpenedLessThan( date.parseOpenHours(wc.details), datetime.timedelta(minutes=watchCount) ):
+            logging.warn('market just opened, waiting')
+        elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True
             self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
             self.areWatching = False
-            self.countOfCrossedIntervals = 0
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
+        elif self.areWatching and curClosePrice < self.long:
+            self.areWatching = False
         logging.info('after checks: %s', self)
     
-        if self.areWatching and self.countOfCrossedIntervals > 5:
+        if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
-            self.countOfCrossedIntervals = 0
-            closePriceIndex = len(dataStream) - 1 # See note in data module for SMA
-            closePrice = dataStream[closePriceIndex].close
-            logging.info('returning a buy at index {} of {} for {}'.format(closePriceIndex, closePrice, self))
-            return closePrice # buyPrice
+            logging.info('returning a buy {}'.format(self))
+            return curClosePrice # buyPrice

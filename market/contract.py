@@ -2,6 +2,7 @@ from ib_insync.contract import Contract
 from ib_insync.contract import ContractDetails
 from ib_insync.contract import Stock
 from ib_insync.ib import IB
+from ib_insync.objects import PriceIncrement
 
 # wrapper for ib's contract since things are spread out among the contract and its details
 class wContract:
@@ -9,8 +10,9 @@ class wContract:
     details: ContractDetails
     symbol: str
     localSymbol: str
+    marketRule: [PriceIncrement]
     ibclient: IB
-    def __init__(self, ibc, symbol, localSymbol):
+    def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
         self.localSymbol = localSymbol
         self.ibclient = ibc
@@ -20,7 +22,7 @@ class wContract:
 
     def ibContract(self):
         c = None
-        if self.symbol == 'TQQQ':
+        if self.symbol == 'TQQQ' or self.symbol == 'AAPL' or self.symbol == 'AMZN' or self.symbol == 'FB' or self.symbol == 'GOOG':
             c = Stock(symbol=self.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
         elif self.symbol == 'SQQQ':
             c = Stock(symbol=self.symbol, exchange='SMART', currency='USD', primaryExchange='NASDAQ')
@@ -47,3 +49,13 @@ class wContract:
         if len(r) != 1 or r[0].contract != self.contract:
             raise LookupError('problem getting contract details: %s', r)
         self.details = r[0]
+
+    def marketRule(self):
+        mrStr = self.details.marketRuleIds
+        mrs = mrStr.split(',')
+        r0 = mrs[0]
+        for r in mrs:
+            if r != r0:
+                raise RuntimeError('multiple market rules for a single contract {}'.format(self.details))
+        mr = self.ibClient.reqMarketRule(r0)
+        self.marketRule = mr

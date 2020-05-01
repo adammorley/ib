@@ -1,9 +1,10 @@
 import logging
+import math
 
 from market.contract import wContract
 from market.config import Config
 class OrderDetails:
-    buyPrice: float = None
+    buyPrice: float = None # converts to Decimal during order creation
     config: Config
     wContract: wContract
 
@@ -32,28 +33,42 @@ class BracketOrder:
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
 
-def roundPrice(price):
-    if not float(price):
-        raise RuntimeError('non-float price: %s', str(price))
-    return round(price, 2)
+import decimal
+from decimal import Decimal
+dContext = decimal.getcontext()
+dContext.prec = 4 # LETPs use four!  wtf
+dContext.traps[decimal.FloatOperation] = True
+decimal.setcontext(dContext)
+def roundToTickSize(wc, price):
+    minTick = Decimal.from_float(wc.details.minTick)
 
+    if minTick == Decimal.from_float(0.01):
+        if len(wc.marketRule) > 1 or Decimal.from_float(wc.marketRule[0].increment) != minTick:
+            raise RuntimeError('not implemented')
+
+    dContext.prec = 2 # but we use pennies, unfortunately
+    decimal.setcontext(dContext)
+    return Decimal.from_float(price)
+
+dContext.prec = 2
+decimal.setcontext(dContext)
 def calculateProfitPrice(od):
     if od.config.percents:
-        return od.buyPrice * (100.0 + od.config.profitPercent)/100.0
+        return od.buyPrice * Decimal.from_float( (100.0 + od.config.profitPercent)/100.0 )
     else:
-        return od.buyPrice + od.config.profitTarget
+        return od.buyPrice + Decimal.from_float(od.config.profitTarget)
 
 def calculateLocPrice(od):
     if od.config.percents:
-        return od.buyPrice * (100.0 + od.config.locPercent)/100.0
+        return od.buyPrice * Decimal.from_float( (100.0 + od.config.locPercent)/100.0 )
     else:
-        return od.buyPrice + od.config.locTarget
+        return od.buyPrice + Decimal.from_float(od.config.locTarget)
 
 def calculateStopPrice(od):
     if od.config.percents:
-        return od.buyPrice * (100.0 - od.config.stopPercent)/100.0
+        return od.buyPrice * Decimal.from_float( (100.0 - od.config.stopPercent)/100.0 )
     else:
-        return od.buyPrice - od.config.stopTarget
+        return od.buyPrice - Decimal.from_float(od.config.stopTarget)
 
 # drops decimal, only whole units
 def calculateQty(od):
@@ -68,12 +83,14 @@ def CreateBracketOrder(orderDetails):
     qty = calculateQty(orderDetails)
     orders = BracketOrder()
 
+    orderDetails.buyPrice = roundToTickSize(orderDetails.wContract, orderDetails.buyPrice)
+
     orders.buyOrder = Order()
     orders.buyOrder.transmit = False
     orders.buyOrder.action = 'BUY'
     orders.buyOrder.totalQuantity = qty
     orders.buyOrder.orderType = 'LMT'
-    orders.buyOrder.lmtPrice = roundPrice(orderDetails.buyPrice)
+    orders.buyOrder.lmtPrice = float( orderDetails.buyPrice )
     orders.buyOrder.tif = 'DAY'
     orders.buyOrder.outsideRth = orderDetails.config.buyOutsideRth
 
@@ -83,7 +100,7 @@ def CreateBracketOrder(orderDetails):
     orders.profitOrder.action = 'SELL'
     orders.profitOrder.totalQuantity = qty
     orders.profitOrder.orderType = 'LMT'
-    orders.profitOrder.lmtPrice = roundPrice(profitPrice)
+    orders.profitOrder.lmtPrice = float( profitPrice )
     orders.profitOrder.tif = 'GTC'
     orders.profitOrder.outsideRth = orderDetails.config.sellOutsideRth
 
@@ -94,7 +111,7 @@ def CreateBracketOrder(orderDetails):
         orders.locOrder.action = 'SELL'
         orders.locOrder.totalQuantity = qty
         orders.locOrder.orderType = 'LOC'
-        orders.locOrder.lmtPrice = roundPrice(locPrice)
+        orders.locOrder.lmtPrice = float( locPrice )
         orders.locOrder.tif = 'DAY'
         orders.locOrder.outsideRth = orderDetails.config.sellOutsideRth
 
@@ -108,9 +125,9 @@ def CreateBracketOrder(orderDetails):
         orders.stopOrder.orderType = 'TRAIL'
         orders.stopOrder.trailingPercent = orderDetails.config.stopPercent
     else:
-        stopPrice = calculateStopPrice(od)
+        stopPrice = calculateStopPrice(orderDetails)
         orders.stopOrder.orderType = 'STP'
-        orders.stopOrder.auxPrice = roundPrice(stopPrice)
+        orders.stopOrder.auxPrice = float( stopPrice )
 
     logging.warn('created bracket orders: %s', orders)
     return orders

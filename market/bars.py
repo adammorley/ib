@@ -1,12 +1,13 @@
 import logging
 
 class Bar:
-    open_: float = 0.0
-    close: float = 0.0
-    high: float = 0.0
-    low: float = 9223372036854775807.
-    barSize: float = 0.0
-    lineSize: float = 0.0
+    open_: float()
+    close: float()
+    high: float()
+    low: float()
+    barSize: float()
+    lineSize: float()
+    close: float()
     color: str = 'X'
 
     # just create a bar, will update
@@ -52,7 +53,7 @@ class BarSet:
         return ','.join(pieces)
 
     def analyze(self):
-        byPrice = None
+        buyPrice = None
         if self.first.color == 'X' or self.second.color == 'X' or self.third.color == 'X':
             logging.debug('got a partial bar')
         #FIXME: the bar size testing seems to have a large impact on not entering, to the detriment of the return

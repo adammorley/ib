@@ -4,6 +4,7 @@ import re
 
 from datetimerange import DateTimeRange # https://pypi.org/project/DateTimeRange/
 
+# returns datetimerange of open hours for next month or so
 def parseOpenHours(cd):
     return parseTradingHours(cd.tradingHours, parseTimezone(cd.timeZoneId) )
 
@@ -66,3 +67,22 @@ def getNextOpenTime(r):
         if t in r_:
             return t
     return None
+
+def isMarketOpen(r):
+    now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    for r_ in r:
+        if now in r_:
+            return True
+    return False
+
+def marketOpenedLessThan(r, td):
+    now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    if len(r) < 2:
+        raise RuntimeError('seems like this might not be a range')
+    #elif td > timedelta(hours=1):
+        #raise RuntimeError('timedelta too large')
+    elif now not in r[0]:
+        raise RuntimeError('market not open')
+    elif now - td not in r[0]:
+        return True
+    return False
