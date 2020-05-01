@@ -57,7 +57,7 @@ if conf.detector == 'threeBarPattern':
     dataStore = bars.BarSet()
 elif conf.detector == 'emaCrossover':
     barSizeStr = '1 min'
-    dataStore = detector.EMA(barSizeStr)
+    dataStore = detector.EMA(barSizeStr, wc)
     dataStream = data.getHistData(wc, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
     dataStore.calcInitEMAs(dataStream)
 else:

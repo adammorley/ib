@@ -3,6 +3,7 @@ import logging
 
 from market import bars
 from market import data
+from market import date
 
 # get the next minute's bar
 def GetNextBar(ticker, sleepFunc):
@@ -35,9 +36,11 @@ def threeBarPattern(barSet, ticker, sleepFunc):
     barSet.third = GetNextBar(ticker, sleepFunc)
     return barSet.analyze()
 
+from market.contract import wContract
 # EMA tracks two expoential moving averages
 # a long and a short
 class EMA:
+    wContract: wContract
     short: float = 0
     long_: float = 0
     isCrossed: bool = None
@@ -51,12 +54,13 @@ class EMA:
     barSizeStr: str = None
     sleepTime: int = None
 
-    def __init__(self, barSizeStr, shortInterval=None, longInterval=None):
+    def __init__(self, barSizeStr, wContract, shortInterval=None, longInterval=None):
         if shortInterval is not None:
             self.shortInterval = shortInterval
         if longInterval is not None:
             self.longInterval = longInterval
         dur = data.barSizeToDuration[barSizeStr]
+        self.wContract = wContract
         if dur['unit'] != 'S' or not dur['value'] or not isinstance(dur['value'], int):
             raise RuntimeError('re-factor')
         self.sleepTime = dur['value']
@@ -128,7 +132,7 @@ class EMA:
         logging.info('current index/price: {}/{}'.format(curClosePriceIndex, curClosePrice))
 
         logging.info('before checks: %s', self)
-        if date.marketOpenedLessThan( date.parseOpenHours(wc.details), datetime.timedelta(minutes=watchCount) ):
+        if date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=watchCount) ):
             logging.warn('market just opened, waiting')
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True

@@ -12,14 +12,15 @@ class wContract:
     localSymbol: str
     marketRule: [PriceIncrement]
     priceIncrement: float
-    ibclient: IB
+    ibClient: IB
     def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
         self.localSymbol = localSymbol
-        self.ibclient = ibc
+        self.ibClient = ibc
         self.ibContract()
         self.qualify()
         self.ibDetails()
+        self.marketRule()
 
     def ibContract(self):
         c = None
@@ -36,7 +37,7 @@ class wContract:
         self.contract = c
 
     def qualify(self):
-        r = self.ibclient.qualifyContracts(self.contract)
+        r = self.ibClient.qualifyContracts(self.contract)
         if len(r) != 1 or r[0].symbol != self.symbol:
             raise LookupError('could not validate response: %s', r[0])
         if self.localSymbol == None: # sometimes the local symbol isn't passed in (like with stocks)
@@ -46,7 +47,7 @@ class wContract:
                 self.localSymbol = self.contract.localSymbol
 
     def ibDetails(self):
-        r = self.ibclient.reqContractDetails(self.contract)
+        r = self.ibClient.reqContractDetails(self.contract)
         if len(r) != 1 or r[0].contract != self.contract:
             raise LookupError('problem getting contract details: %s', r)
         self.details = r[0]
