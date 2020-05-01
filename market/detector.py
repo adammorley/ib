@@ -1,4 +1,5 @@
 # functions to detect changes which indicate a buy point for various securities
+import datetime
 import logging
 
 from market import bars
