@@ -73,12 +73,13 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
     # when running overnight, the historical data stream once got "stuck" and the EMAs were not updating.
     # so if we've run for longer than an hour, just refect the historical data and the old one will
     # get garbage collected.
-    if conf.detector == 'emaCrossover' and datetime.datetime.utcnow() > dataRefresh:
+    elif conf.detector == 'emaCrossover' and datetime.datetime.utcnow() > dataRefresh:
         logging.warn('refreshing historical data to avoid stale data.')
         dataRefresh = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         ibc.cancelHistoricalData(dataStream)
-        ib.sleep(0)
+        ibc.sleep(0)
         dataStream = data.getHistData(wc, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
+
     buyPrice = None
     if conf.detector == 'threeBarPattern':
         buyPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)

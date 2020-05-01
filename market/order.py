@@ -1,5 +1,4 @@
 import logging
-import math
 
 from market.contract import wContract
 from market.config import Config
@@ -43,7 +42,7 @@ def roundToTickSize(wc, price):
     minTick = Decimal.from_float(wc.details.minTick)
 
     if minTick == Decimal.from_float(0.01):
-        if len(wc.marketRule) > 1 or Decimal.from_float(wc.marketRule[0].increment) != minTick:
+        if Decimal.from_float(wc.priceIncrement) != minTick:
             raise RuntimeError('not implemented')
 
     dContext.prec = 2 # but we use pennies, unfortunately

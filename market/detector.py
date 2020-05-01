@@ -125,7 +125,7 @@ class EMA:
         self.recalcEMAs(dataStream)
         curClosePriceIndex = len(dataStream) - 1 # See note in data module for SMA
         curClosePrice = dataStream[curClosePriceIndex].close
-        logging.info('current price/index: {}/{}'.format(curClosePriceIndex, curClosePrice))
+        logging.info('current index/price: {}/{}'.format(curClosePriceIndex, curClosePrice))
 
         logging.info('before checks: %s', self)
         if date.marketOpenedLessThan( date.parseOpenHours(wc.details), datetime.timedelta(minutes=watchCount) ):

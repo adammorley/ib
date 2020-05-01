@@ -11,6 +11,7 @@ class wContract:
     symbol: str
     localSymbol: str
     marketRule: [PriceIncrement]
+    priceIncrement: float
     ibclient: IB
     def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
@@ -51,11 +52,18 @@ class wContract:
         self.details = r[0]
 
     def marketRule(self):
+        if not isinstance(self.details.marketRuleIds, str):
+            raise RuntimeError('wrong format {}'.format(self.details))
         mrStr = self.details.marketRuleIds
         mrs = mrStr.split(',')
+        if len(mrs) < 1:
+            raise RuntimeError('wrong format {}'.format(self.details))
         r0 = mrs[0]
         for r in mrs:
             if r != r0:
                 raise RuntimeError('multiple market rules for a single contract {}'.format(self.details))
         mr = self.ibClient.reqMarketRule(r0)
+        if len(mr) > 1:
+            raise RuntimeError('multiple price incmrenets {} {}'.format(self.details, mr))
         self.marketRule = mr
+        self.priceIncrement = mr[0].increment

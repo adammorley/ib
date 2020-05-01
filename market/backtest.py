@@ -1,10 +1,5 @@
-from decimal import *
 import logging
 
-dContext = decimal.getcontext()
-dContext.prec = 2
-dContext.traps[FloatOperation] = True
-decimal.setcontext(dContext)
 from market import bars
 
 def anotateBars(histBars):
@@ -17,10 +12,10 @@ def anotateBars(histBars):
 
 def makeBar(histBar):
     bar = bars.Bar(0)
-    bar.open = Decimal.from_float(histBar.open)
-    bar.close = Decimal.from_float(histBar.close)
-    bar.high = Decimal.from_float(histBar.high)
-    bar.low = Decimal.from_float(histBar.low)
+    bar.open = histBar.open
+    bar.close = histBar.close
+    bar.high = histBar.high
+    bar.low = histBar.low
     return bar
 
 def getNextBar(newBars, index):

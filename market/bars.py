@@ -1,13 +1,12 @@
 import logging
 
 class Bar:
-    open_: float()
-    close: float()
-    high: float()
-    low: float()
-    barSize: float()
-    lineSize: float()
-    close: float()
+    open_: float = 0.0
+    close: float = 0.0
+    high: float = 0.0
+    low: float = 92233720368547758.0
+    barSize: float = 0.0
+    lineSize: float = 0.0
     color: str = 'X'
 
     # just create a bar, will update
