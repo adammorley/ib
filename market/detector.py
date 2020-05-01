@@ -133,7 +133,7 @@ class EMA:
         logging.info('current index/price: {}/{}'.format(curClosePriceIndex, curClosePrice))
 
         logging.info('before checks: %s', self)
-        if date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=watchCount) ):
+        if date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
             logging.warn('market just opened, waiting')
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True
