@@ -6,6 +6,30 @@ from market import bars
 from market import data
 from market import date
 
+def setupData(ibc, wc, conf, backtestArgs=None):
+    dataStore = None
+    dataStream = None
+    if backtestArgs is not None:
+        if conf.detector == 'threeBarPattern':
+            dataStore = barSet = bars.BarSet()
+        elif conf.detector == 'emaCrossover':
+            dataStore = EMA(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
+            dataStore.backTest = True
+            logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
+        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
+        if conf.detector == 'emaCrossover':
+            dataStore.calcInitEMAs(dataStream)
+    elif conf.detector == 'threeBarPattern':
+        dataStream = data.getTicker(wc, ibc)
+    elif conf.detector == 'emaCrossover':
+        barSizeStr = '1 min'
+        dataStore = EMA(conf.barSizeStr, wc)
+        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval)
+        dataStore.calcInitEMAs(dataStream)
+    else:
+        raise RuntimeError('do not know what to do!')
+    return dataStore, dataStream
+
 # get the next minute's bar
 def GetNextBar(ticker, sleepFunc):
     numberOfTicksInBar = 240
@@ -54,12 +78,17 @@ class EMA:
     longInterval: int = 200
     barSizeStr: str = None
     sleepTime: int = None
+    backTest: bool = None
+    curEmaIndex: int = None
+    curIndex: int = None
 
-    def __init__(self, barSizeStr, wContract, shortInterval=None, longInterval=None):
+    def __init__(self, barSizeStr, wContract, shortInterval=None, longInterval=None, watchCount=None):
         if shortInterval is not None:
             self.shortInterval = shortInterval
         if longInterval is not None:
             self.longInterval = longInterval
+        if watchCount is not None:
+            self.watchCount = watchCount
         dur = data.barSizeToDuration[barSizeStr]
         self.wContract = wContract
         if dur['unit'] != 'S' or not dur['value'] or not isinstance(dur['value'], int):
@@ -90,30 +119,41 @@ class EMA:
         long_ = 0
         logging.info('datastream is {}'.format(len(dataStream)))
         for interval in [self.shortInterval, self.longInterval]:
-            # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
-            tailOffset = len(dataStream) - 1 - interval - 2 # See note in data.SMA
-            sma = data.calcSMA(interval, dataStream, tailOffset)
-            logging.info('calculated sma of {} for {} at {}'.format(sma, interval, tailOffset))
-
-            prevEMA = sma
-            ema = 0
-            index = len(dataStream) - 1 - interval - 1 # See note in data.SMA
-            for point in range(0, interval):
-                curPrice = dataStream[index].close
-                ema = data.calcEMA(curPrice, prevEMA, interval)
-                prevEMA = ema
-                index += 1
+            if self.backTest: # in backtest, we can just start from 0 instead of later
+                sma = 0
+                for i in range(0, interval):
+                    sma += dataStream[i].close
+                sma = sma / interval
+                ema = data.calcEMA(dataStream[interval].close, sma, interval)
+            else:
+                # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
+                tailOffset = len(dataStream) - 1 - interval - 2 # See note in data.SMA
+                sma = data.calcSMA(interval, dataStream, tailOffset)
+                logging.info('calculated sma of {} for {} at {}'.format(sma, interval, tailOffset))
+    
+                prevEMA = sma
+                ema = 0
+                index = len(dataStream) - 1 - interval - 1 # See note in data.SMA
+                for point in range(0, interval):
+                    curPrice = dataStream[index].close
+                    ema = data.calcEMA(curPrice, prevEMA, interval)
+                    prevEMA = ema
+                    index += 1
             logging.info('calculated ema for {} as {}'.format(interval, ema))
             if interval == self.shortInterval:
                 short = ema
             elif interval == self.longInterval:
                 long_ = ema
+        self.curEmaIndex = self.longInterval # for backtest, overridden by auto
         self.update(short, long_)
 
     def recalcEMAs(self, dataStream):
-        curPriceIndex = len(dataStream) - 2 # See note in data.SMA
-        curPrice = dataStream[curPriceIndex].close
-        logging.info('recalculating emas at index {} using last minutes price of {}'.format(curPriceIndex, curPrice))
+        if self.backTest:
+            self.curEmaIndex = self.curEmaIndex + 1
+        else:
+            self.curEmaIndex = len(dataStream) - 2 # See note in data.SMA
+        curPrice = dataStream[self.curEmaIndex].close
+        logging.info('recalculating emas at index {} using last minutes price of {}'.format(self.curEmaIndex, curPrice))
         short = data.calcEMA(curPrice, self.short, self.shortInterval)
         long_ = data.calcEMA(curPrice, self.long, self.longInterval)
         self.update(short, long_)
@@ -123,17 +163,20 @@ class EMA:
     #   if the short-term ema is above the long-term ema for n minutes where n > 15 after crossing
     #   if the current interval's price drops below the long ema, do not enter (weak momo)
     #   if the market opened less than 15 minutes ago, we're just going to ignore signals
-    def checkForBuy(self, dataStream, sleepFunc):
+    def checkForBuy(self, dataStream, sleepFunc=None):
         logging.info('waiting for data to check for buy...')
-        sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
+        if not self.backTest:
+            sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
         self.recalcEMAs(dataStream)
-        curClosePriceIndex = len(dataStream) - 1 # See note in data module for SMA
-        curClosePrice = dataStream[curClosePriceIndex].close
-        logging.info('current index/price: {}/{}'.format(curClosePriceIndex, curClosePrice))
+        self.curIndex = len(dataStream) - 1 # See note in data module for SMA
+        if self.backTest:
+            self.curIndex = self.curEmaIndex + 1
+        curClosePrice = dataStream[self.curIndex].close
+        logging.info('current index/price: {}/{}'.format(self.curIndex, curClosePrice))
 
         logging.info('before checks: %s', self)
-        if date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
+        if not self.backTest and date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
             logging.warn('market just opened, waiting')
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             self.areWatching = True

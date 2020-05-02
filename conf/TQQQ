@@ -2,7 +2,7 @@
 percents: false
 profitTarget: 2
 stopTarget: 1
-locTarget: 1.0
+dayTarget: 1.0
 trail: false
 qty: 100
 openPositions: 5

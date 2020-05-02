@@ -1,12 +1,16 @@
 ---
-percents: true
-profitPercent: 1
-stopPercent: 0.5
-locOrder: false
-trail: true
+#percents: true
+#profitPercent: 0.5
+#stopPercent: 0.2
+percents: false
+profitTarget: 2
+stopTarget: 10
+dayOrder: false
+trail: false
 byPrice: false
 qty: 1
 openPositions: 1
 buyOutsideRth: true
 sellOutsideRth: true
 detector: emaCrossover
+barSizeStr: '1 min'

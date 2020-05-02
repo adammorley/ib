@@ -2,8 +2,8 @@
 percents: true
 profitPercent: 4
 stopPercent: 2
-locOrder: true
-locPercent: 2
+dayOrder: true
+dayPercent: 2
 trail: false
 byPrice: true
 dollarAmt: 5000

@@ -8,15 +8,21 @@ import logging
 # FIXME: this kind of sucks
 barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
 def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=True):
-    durationStr = ''
-    if d is not None:
-        durationStr = str(d)+' D'
+    duration = barSizeToDuration[barSizeStr]
+    if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
+        raise RuntimeError('using seconds is supported')
+
+    if d is not None: # we're doing a backtest, so add the long interval to build the SMA
+        d = d *60*24 + longInterval
     else:
-        duration = barSizeToDuration[barSizeStr]
-        if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
-            raise RuntimeError('using seconds is supported')
-        else:
-            durationStr = str(duration['value'] * longInterval * 2 + 5 * duration['value']) + ' ' + duration['unit']
+        d = longInterval * 2 + 5
+
+    durationStr = ''
+    if d > 1440: # d is in minutes because barSizeToDuration supports minutes atm
+        d = int(d /60/24) if int(d /60/24) > 0 else 1
+        durationStr = str(d) + ' D'
+    else:
+        durationStr = str(d *duration['value']) + ' ' + duration['unit']
 
     logging.info('getting historical data for c:{}/{}, e:{}, d:{}, b:{}, w:{}, u:{}, f:{}, k:{}'.format(wc.symbol, wc.localSymbol, e, durationStr, barSizeStr, t, r, f, k))
     histData = ibc.reqHistoricalData(contract=wc.contract, endDateTime=e, durationStr=durationStr, barSizeSetting=barSizeStr, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)

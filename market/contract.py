@@ -1,3 +1,5 @@
+import logging
+
 from ib_insync.contract import Contract
 from ib_insync.contract import ContractDetails
 from ib_insync.contract import Stock
@@ -21,6 +23,7 @@ class wContract:
         self.qualify()
         self.ibDetails()
         self.marketRule()
+        self.validatePriceIncrement()
 
     def ibContract(self):
         c = None
@@ -64,7 +67,19 @@ class wContract:
             if r != r0:
                 raise RuntimeError('multiple market rules for a single contract {}'.format(self.details))
         mr = self.ibClient.reqMarketRule(r0)
-        if len(mr) > 1:
-            raise RuntimeError('multiple price incmrenets {} {}'.format(self.details, mr))
         self.marketRule = mr
-        self.priceIncrement = mr[0].increment
+        penny = False
+        if len(self.marketRule) > 1:
+            for r in self.marketRule:
+                if r.increment == 0.01:
+                    penny = True
+            if not penny:
+                raise RuntimeError('multiple price incmrenets {} {}'.format(self.details, self.marketRule))
+            logging.warn('default to a penny for the increment, multiple price increments found {} {}'.format(self.marketRule, self.details))
+            self.priceIncrement = 0.01
+        else:
+            self.priceIncrement = self.marketRule[0].increment
+
+    def validatePriceIncrement(self):
+        if self.details.minTick != self.priceIncrement and len(self.marketRule) < 2:
+            raise RuntimeError('ticks dont match: {} {}'.format(self.details.minTick, self.priceIncrement))

@@ -29,7 +29,7 @@ class Bar:
         elif self.close > self.high:
             self.high = self.close
 
-    def anotate(self):
+    def anotate(self): # used for three-bar pattern detection
         self.barSize = abs(self.open - self.close)
         self.lineSize = abs(self.high - self.low)
         if self.open < self.close:

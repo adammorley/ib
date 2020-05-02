@@ -46,22 +46,11 @@ dataRefresh = startTime + datetime.timedelta(hours=1)
 ibc = connect.connect(args.debug, args.prod)
 if args.info:
     util.logToConsole(logging.INFO)
-conf = config.getConfig(args.conf, autoOrder=True)
+conf = config.getConfig(args.conf, detectorOn=True)
 
 wc = contract.wContract(ibc, args.symbol, args.localSymbol)
 
-dataStore = None
-dataStream = None
-if conf.detector == 'threeBarPattern':
-    dataStream = data.getTicker(wc, ibc)
-    dataStore = bars.BarSet()
-elif conf.detector == 'emaCrossover':
-    barSizeStr = '1 min'
-    dataStore = detector.EMA(barSizeStr, wc)
-    dataStream = data.getHistData(wc, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
-    dataStore.calcInitEMAs(dataStream)
-else:
-    raise RuntimeError('do not know what to do!')
+dataStore, dataStream = detector.setupData(ibc, wc, conf)
 
 # what we really want is to extract the "I detected a reason to buy contract n at bar y with reuqirements z"
 # and add the es one as well.

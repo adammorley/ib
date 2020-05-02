@@ -1,6 +1,7 @@
 import logging
 
 from market import bars
+from market import order
 
 def anotateBars(histBars):
     newBars = []
@@ -22,11 +23,38 @@ def getNextBar(newBars, index):
     return newBars[index]
 
 # only used to check the third bar for if the order bought/sold in the third bar during "blur"
-def checkTradeExecution(bar, trade):
-    if trade.buyPrice <= bar.high and trade.buyPrice - trade.config.stopTarget >= bar.low:
-        return None, (-1 * trade.config.stopTarget)
+# eg this is an unknown because we aren't analyzing by-second data
+def checkTradeExecution(bar, orders):
+    if orders.buyOrder.lmtPrice <= bar.high and orders.stopOrder.auxPrice >= bar.low:
+        return None, (orders.stopOrder.auxPrice - orders.buyOrder.lmtPrice)
     else:
-        return trade, None
+        return orders, None
+
+# check all the open positions
+def checkPositions(wc, positions, conf, dataStore, dataStream, index, totals):
+    for position in positions:
+        closed, amount = None, None
+        if conf.detector == 'threeBarPattern':
+            closed, amount = checkPosition(dataStore.third, position)
+        elif conf.detector == 'emaCrossover':
+            closed, amount = checkPosition(dataStream[index], position)
+
+        if closed:
+            logging.warn('closed a position: {} {} {} {} {}'.format(amount, closed, position, dataStore, dataStream[index]))
+            totals['gl'] += amount
+            if totals['tf'] > totals['mf']:
+                totals['mf'] = totals['tf']
+            totals['tf'] -= position.buyOrder.lmtPrice * position.buyOrder.totalQuantity
+            positions.remove(position)
+        elif not closed and position.stopOrder.orderType == 'TRAIL':
+            closePrice = dataStream[index].close
+            if closePrice > position.buyOrder.lmtPrice:
+                if orders.stopOrder.trailingPercent:
+                    position.stopOrder.auxPrice = order.Round( closePrice * (100.0 - position.stopOrder.trailingPercent)/100.0, wc.priceIncrement)
+                elif conf.stopTarget:
+                    position.stopOrder.auxPrice = order.Round( closePrice - conf.stopTarget)
+        #else position stays, no changes
+    return positions, totals
 
 # check if a "position" (represented by a fictitious order) changed in the bar
 # returns orderDetails and amount
@@ -55,25 +83,27 @@ def checkStopProfit(position, bar):
     amount = None
     executed = None
     # executed at stop price
-    if position.buyPrice - position.config.stopTarget >= bar.low and position.buyPrice + position.config.profitTarget > bar.high:
-        amount = (-1 * position.config.stopTarget) * position.config.qty
+    if position.stopOrder.auxPrice >= bar.low and position.profitOrder.lmtPrice > bar.high:
+        amount = position.stopOrder.auxPrice - position.buyOrder.lmtPrice
         logging.info('closing position at a loss: {} {} {}'.format(amount, position, bar))
         executed = True
     # executed at profit price
-    elif position.buyPrice - position.config.stopTarget < bar.low and position.buyPrice + position.config.profitTarget <= bar.high:
-        amount = position.config.profitTarget * position.config.qty
+    elif position.stopOrder.auxPrice < bar.low and position.profitOrder.lmtPrice <= bar.high:
+        amount = position.profitOrder.lmtPrice - position.buyOrder.lmtPrice
         logging.info('closing position at a gain: {} {} {}'.format(amount, position, bar))
         executed = True
     # did not execute, no delta, stays as a position
-    elif position.buyPrice - position.config.stopTarget < bar.low and position.buyPrice + position.config.profitTarget > bar.high:
+    elif position.stopOrder.auxPrice < bar.low and position.profitOrder.lmtPrice > bar.high:
         logging.info('not closing a position {} {}'.format(position, bar))
         executed = False
         amount = None
     # unknown execution, assume loss
-    elif position.buyPrice - position.config.stopTarget >= bar.low and position.buyPrice + position.config.profitTarget <= bar.high:
+    elif position.stopOrder.auxPrice >= bar.low and position.profitOrder.lmtPrice <= bar.high:
         logging.info('wonky: closing position: {}'.format(position))
         executed = None
-        amount = (-1 * position.config.stopTarget) * position.config.qty
+        amount = position.stopOrder.auxPrice - position.buyOrder.lmtPrice
     else:
         logging.fatal('unhandled {} {}'.format(position, bar))
+    if amount is not None:
+        amount = amount * position.buyOrder.totalQuantity
     return amount, executed
