@@ -16,6 +16,3 @@ longEMA: 20
 shortEMA: 5
 watchCount: 5
 barSizeStr: '1 min'
-#percents: true
-#profitPercent: 0.5
-#stopPercent: 0.2

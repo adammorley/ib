@@ -5,7 +5,7 @@ def getConfig(configFile, detectorOn=None):
     with open(configFile, 'r') as f:
         return ProcessConfig(yaml.load(f), detectorOn)
 
-def overrideConfig(conf, profitTarget=None, stopTarget=None, conf.shortEMA=None, conf.longEMA=None, conf.watchCount=None):
+def overrideConfig(conf, profitTarget=None, stopTarget=None, shortEMA=None, longEMA=None, watchCount=None):
     if profitTarget is not None:
         conf.profitTarget = profitTarget
     if stopTarget is not None:
@@ -19,6 +19,8 @@ def overrideConfig(conf, profitTarget=None, stopTarget=None, conf.shortEMA=None,
     return conf
 
 class Config:
+    symbol: str = None
+    localSymbol: str = None
     percents: bool
     profitTarget: float
     profitPercent: float
@@ -48,6 +50,9 @@ class Config:
 def ProcessConfig(conf, detectorOn=None):
     config = Config()
 
+    config.symbol = conf['symbol']
+    if config.symbol == 'ES': # FIXME: make this better, maybe via assert on contract?
+        config.localSymbol = conf['localSymbol']
     config.percents = conf['percents']
     config.dayOrder = conf['dayOrder']
     config.byPrice = conf['byPrice']
