@@ -1,16 +1,21 @@
 ---
-#percents: true
-#profitPercent: 0.5
-#stopPercent: 0.2
+symbol: ES
+localSymbol: ESM0
 percents: false
-profitTarget: 2
-stopTarget: 10
+profitTarget: 3
+stopTarget: 7
 dayOrder: false
 trail: false
 byPrice: false
 qty: 1
-openPositions: 1
+openPositions: 3
 buyOutsideRth: true
 sellOutsideRth: true
 detector: emaCrossover
+longEMA: 20
+shortEMA: 5
+watchCount: 5
 barSizeStr: '1 min'
+#percents: true
+#profitPercent: 0.5
+#stopPercent: 0.2

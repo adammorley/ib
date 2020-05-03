@@ -20,10 +20,6 @@ from market import trade
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--conf', type=str, required=True)
-parser.add_argument('--symbol', type=str, required=True)
-parser.add_argument('--localSymbol', type=str, default=None)
-#parser.add_argument('--short', default=None, type=int) # for ema detector, short moving avg
-#parser.add_argument('--long', default=None, type=int) # for ema detector, long moving avg
 parser.add_argument('--prod', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true', default=None)
 parser.add_argument('--info', action='store_true', default=None)
@@ -48,7 +44,7 @@ if args.info:
     util.logToConsole(logging.INFO)
 conf = config.getConfig(args.conf, detectorOn=True)
 
-wc = contract.wContract(ibc, args.symbol, args.localSymbol)
+wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 dataStore, dataStream = detector.setupData(ibc, wc, conf)
 

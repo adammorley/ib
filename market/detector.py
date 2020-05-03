@@ -23,7 +23,7 @@ def setupData(ibc, wc, conf, backtestArgs=None):
         dataStream = data.getTicker(wc, ibc)
     elif conf.detector == 'emaCrossover':
         barSizeStr = '1 min'
-        dataStore = EMA(conf.barSizeStr, wc)
+        dataStore = EMA(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
         dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval)
         dataStore.calcInitEMAs(dataStream)
     else:
@@ -73,9 +73,9 @@ class EMA:
     stateChanged: bool = None
     areWatching: bool = None
     countOfCrossedIntervals: int = 0
-    watchCount: int = 15 # barSizeSetting intervals
-    shortInterval: int = 50
-    longInterval: int = 200
+    watchCount: int = 5 # barSizeSetting intervals
+    shortInterval: int = 5
+    longInterval: int = 20
     barSizeStr: str = None
     sleepTime: int = None
     backTest: bool = None

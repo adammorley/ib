@@ -5,11 +5,17 @@ def getConfig(configFile, detectorOn=None):
     with open(configFile, 'r') as f:
         return ProcessConfig(yaml.load(f), detectorOn)
 
-def overrideConfig(conf, profitTarget, stopTarget):
+def overrideConfig(conf, profitTarget=None, stopTarget=None, conf.shortEMA=None, conf.longEMA=None, conf.watchCount=None):
     if profitTarget is not None:
         conf.profitTarget = profitTarget
     if stopTarget is not None:
         conf.stopTarget = stopTarget
+    if shortEMA is not None:
+        conf.shortEMA = shortEMA
+    if longEMA is not None:
+        conf.longEMA = longEMA
+    if watchCount is not None:
+        conf.watchCount = watchCount
     return conf
 
 class Config:
@@ -30,6 +36,9 @@ class Config:
     dollarAmt: float
     detector: str
     barSizeStr: str
+    longEMA: int
+    shortEMA: int
+    watchCount: int
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
@@ -67,6 +76,10 @@ def ProcessConfig(conf, detectorOn=None):
     if detectorOn:
         config.detector = conf['detector']
         config.barSizeStr = conf['barSizeStr']
+        if config.detector == 'emaCrossover':
+            config.shortEMA = conf['shortEMA']
+            config.longEMA = conf['longEMA']
+            config.watchCount = conf['watchCount']
 
     logging.warn('config %s', conf)
     return config

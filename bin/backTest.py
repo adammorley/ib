@@ -31,12 +31,9 @@ parser.add_argument('--conf', type=str, required=True)
 parser.add_argument("--duration", default=60, type=int)
 parser.add_argument("--endDate", default='', type=str)
 
-parser.add_argument('--symbol', required=True, type=str)
-parser.add_argument('--localSymbol', type=str, default=None)
-
-parser.add_argument('--short', default=None, type=int) # for ema detector, short moving avg
-parser.add_argument('--long', default=None, type=int) # for ema detector, long moving avg
-parser.add_argument('--watchCount', default=None, type=int) # for ema detector
+parser.add_argument('--shortEMA', default=None, type=int)
+parser.add_argument('--longEMA', default=None, type=int)
+parser.add_argument('--watchCount', default=None, type=int)
 parser.add_argument('--profitTarget', default=None, type=float)
 parser.add_argument('--stopTarget', default=None, type=float)
 args = parser.parse_args()
@@ -49,7 +46,7 @@ def updateBarSet(newBars, i, dataStore):
     return dataStore
 
 def modTotals(totals):
-    if args.symbol == 'ES':
+    if conf.symbol == 'ES':
         totals['gl']=totals['gl']*50
     return totals
 
@@ -59,9 +56,9 @@ if args.info:
 if args.error:
     util.logToConsole(logging.ERROR)
 conf = config.getConfig(args.conf, detectorOn=True)
-conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget)
+conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget, args.shortEMA, args.longEMA, args.watchCount)
 
-wc = contract.wContract(ibc, args.symbol, args.localSymbol)
+wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 useRth = False if conf.buyOutsideRth else True
 backtestArgs = {'watchCount': args.watchCount, 'shortInterval': args.short, 'longInterval': args.long, 'e': args.endDate, 'd': args.duration, 't': 'TRADES', 'r': useRth, 'f': 2, 'k': False}
