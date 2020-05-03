@@ -81,6 +81,7 @@ class EMA:
     backTest: bool = None
     curEmaIndex: int = None
     curIndex: int = None
+    byPeriod: int = None # number of days of bars to examine during iterative backtest
 
     def __init__(self, barSizeStr, wContract, shortInterval=None, longInterval=None, watchCount=None):
         if shortInterval is not None:
@@ -121,10 +122,15 @@ class EMA:
         for interval in [self.shortInterval, self.longInterval]:
             if self.backTest: # in backtest, we can just start from 0 instead of later
                 sma = 0
-                for i in range(0, interval):
+                startIndex = 0
+                if self.byPeriod:
+                    startIndex = len(dataStream) - 1 - self.byPeriod *60 *24
+                    logging.info('doing by period, using index/period(days): {}/{}'.format(startIndex, self.byPeriod))
+                for i in range(startIndex, startIndex+interval):
                     sma += dataStream[i].close
                 sma = sma / interval
-                ema = data.calcEMA(dataStream[interval].close, sma, interval)
+                ema = data.calcEMA(dataStream[startIndex+interval].close, sma, interval)
+                self.curEmaIndex = startIndex+interval
             else:
                 # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
                 tailOffset = len(dataStream) - 1 - interval - 2 # See note in data.SMA
@@ -144,7 +150,6 @@ class EMA:
                 short = ema
             elif interval == self.longInterval:
                 long_ = ema
-        self.curEmaIndex = self.longInterval # for backtest, overridden by auto
         self.update(short, long_)
 
     def recalcEMAs(self, dataStream):

@@ -22,6 +22,62 @@ def makeBar(histBar):
 def getNextBar(newBars, index):
     return newBars[index]
 
+def backtest(wc, dataStream, dataStore, conf):
+    totals = {'gl': 0, 'tf': 0, 'mf': 0}
+    positions = []
+    startIndex = None
+    # which data point in the dataStream/bar set to evaluate on this round about buy or not
+    if conf.detector == 'threeBarPattern':
+        startIndex = 2
+    elif conf.detector == 'emaCrossover':
+        # we just stored (at init) the last EMA calculated, eg we are examining curClosePriceIndex
+        startIndex = dataStore.curEmaIndex + 1
+
+    for i in range(startIndex, len(dataStream)-1):
+        if conf.detector == 'threeBarPattern':
+            dataStore = updateBarSet(dataStream, i, dataStore)
+    
+        # first, see if any positions changed
+        logging.info('number of positions open: {}'.format(len(positions)))
+        positions, totals = checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
+    
+        # see if we calculated a buyPrice
+        buyPrice = None
+        if conf.detector == 'threeBarPattern':
+            buyPrice = dataStore.analyze()
+        elif conf.detector == 'emaCrossover':
+            buyPrice = dataStore.checkForBuy(dataStream)
+    
+        if buyPrice is not None:
+            od = order.OrderDetails(buyPrice, conf, wc)
+            od.config.qty = order.calculateQty(od)
+            logging.warn('found an order: %s %s', od, dataStore)
+            if len(positions) < od.config.openPositions:
+                # checking whether the position opened and closed in the same bar
+                amount = None
+                orders = order.CreateBracketOrder(od)
+                # need to use real values (not offsets) for position checker
+                if orders.stopOrder.orderType == 'TRAIL': # have to store for position tracking
+                    if orderDetails.config.stopPercent:
+                        orders.stopOrder.auxPrice = order.Round( orders.buyOrder.lmtPrice *(100.0 - orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
+                    elif orderDetails.config.stopTarget:
+                        orders.stopOrder.auxPrice = orders.buyOrder.lmtPrice - orderDetails.config.stopTarget
+                if conf.detector == 'threeBarPattern':
+                    orders, amount = checkTradeExecution(dataStore.third, orders)
+                elif conf.detector == 'emaCrossover':
+                    orders, amount = checkTradeExecution(dataStream[dataStore.curIndex], orders)
+                logging.warn('position config %s', od.config)
+                # check if the trade executed
+                if orders is not None:
+                    logging.warn('opened a position: %s', orders)
+                    positions.append(orders)
+                    totals['tf'] += orders.buyOrder.lmtPrice * orders.buyOrder.totalQuantity
+                elif orders is None and amount is not None:
+                    logging.warn('opened and closed a position in third bar')
+                    totals['gl'] += amount
+                logging.debug('totalFundsInPlay: %.2f', totals['tf'])
+    return totals
+
 # only used to check the third bar for if the order bought/sold in the third bar during "blur"
 # eg this is an unknown because we aren't analyzing by-second data
 def checkTradeExecution(bar, orders):

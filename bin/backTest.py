@@ -70,73 +70,35 @@ if conf.detector == 'threeBarPattern':
     dataStore.first = backtest.getNextBar(dataStream, 0)
     dataStore.second = backtest.getNextBar(dataStream, 1)
 
-positions = []
-totals = {'gl': 0, 'tf': 0, 'mf': 0}
-startIndex = None
-# which data point in the dataStream/bar set to evaluate on this round about buy or not
-if conf.detector == 'threeBarPattern':
-    startIndex = 2
-elif conf.detector == 'emaCrossover':
-    # we just stored (at init) the last EMA calculated, eg we are examining curClosePriceIndex
-    startIndex = dataStore.curEmaIndex + 1
+ds = {}
+for p in [1, 5, 10, 14, 30, 60]:
+        for lI in [10, 20, 40, 60, 120, 200]:
+            for sI in [5, 15, 30, 45, 50]:
+                if sI > lI:
+                    continue
+                for w in [5, 15, 30, 60]:
+                    for sT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25]:
+                        for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
+                            ID = 'p:'+str(p)+', lI:'+str(lI)+', sI:'+str(sI)+', w:'+str(w)+', sT:'+str(sT)+', pT'+str(pT)
+                            logging.error('running %s', ID)
+                            conf.profitTarget = pT
+                            conf.stopTarget = sT
+                            dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
+                            dataStore.backTest = True
+                            dataStore.byPeriod = p
+                            dataStore.calcInitEMAs(dataStream)
+                            totals = backtest.backtest(wc, dataStream, dataStore, conf)
+                            if args.symbol == 'ES':
+                                totals['gl']=totals['gl']*50
+                            r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
+                            print(str(ID) + ' ' + str({'gainLoss': totals['gl'], 'maxFunds': totals['mf'], 'ret': r}), flush=True)
 
-for i in range(startIndex, len(dataStream)-1):
-    if conf.detector == 'threeBarPattern':
-        dataStore = updateBarSet(dataStream, i, dataStore)
-
-    # first, see if any positions changed
-    logging.info('number of positions open: {}'.format(len(positions)))
-    positions, totals = backtest.checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
-
-    # see if we calculated a buyPrice
-    buyPrice = None
-    if conf.detector == 'threeBarPattern':
-        buyPrice = dataStore.analyze()
-    elif conf.detector == 'emaCrossover':
-        buyPrice = dataStore.checkForBuy(dataStream)
-
-    if buyPrice is not None:
-        od = order.OrderDetails(buyPrice, conf, wc)
-        od.config.qty = order.calculateQty(od)
-        logging.warn('found an order: %s %s', od, dataStore)
-        if len(positions) < od.config.openPositions:
-            # checking whether the position opened and closed in the same bar
-            amount = None
-            orders = order.CreateBracketOrder(od)
-            # need to use real values (not offsets) for position checker
-            if orders.stopOrder.orderType == 'TRAIL': # have to store for position tracking
-                if orderDetails.config.stopPercent:
-                    orders.stopOrder.auxPrice = order.Round( orders.buyOrder.lmtPrice *(100.0 - orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
-                elif orderDetails.config.stopTarget:
-                    orders.stopOrder.auxPrice = orders.buyOrder.lmtPrice - orderDetails.config.stopTarget
-            if conf.detector == 'threeBarPattern':
-                orders, amount = backtest.checkTradeExecution(dataStore.third, orders)
-            elif conf.detector == 'emaCrossover':
-                orders, amount = backtest.checkTradeExecution(dataStream[dataStore.curIndex], orders)
-            logging.warn('position config %s', od.config)
-            # check if the trade executed
-            if orders is not None:
-                logging.warn('opened a position: %s', orders)
-                positions.append(orders)
-                totals['tf'] += orders.buyOrder.lmtPrice * orders.buyOrder.totalQuantity
-            elif orders is None and amount is not None:
-                logging.warn('opened and closed a position in third bar')
-                totals['gl'] += amount
-            logging.debug('totalFundsInPlay: %.2f', totals['tf'])
-
-# are any positions left open?
-#logging.warn('checking for any leftover positions')
-#lastClose = dataStream[len(dataStream)-1].close
-#for position in positions:
-    #totals['gl'] += lastClose - position.buyOrder.lmtPrice   
-
-r = 0
-if args.symbol == 'ES':
-    totals['gl']=totals['gl']*50
-if totals['mf'] > 0:
-    r = totals['gl']/totals['mf']*100
-logging.error('totalGainLoss: %.2f, maxFundsInPlay: %.2f, return: %.2f', totals['gl'], totals['mf'], r)
-
+#backtest.backtest(wc, dataStream, dataStore, conf)
+## are any positions left open?
+##logging.warn('checking for any leftover positions')
+##lastClose = dataStream[len(dataStream)-1].close
+##for position in positions:
+#    #totals['gl'] += lastClose - position.buyOrder.lmtPrice   
 connect.close(ibc)
 
 sys.exit(0)
