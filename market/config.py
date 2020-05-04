@@ -51,8 +51,7 @@ def ProcessConfig(conf, detectorOn=None):
     config = Config()
 
     config.symbol = conf['symbol']
-    if config.symbol == 'ES': # FIXME: make this better, maybe via assert on contract?
-        config.localSymbol = conf['localSymbol']
+    config.localSymbol = conf['localSymbol']
     config.percents = conf['percents']
     config.dayOrder = conf['dayOrder']
     config.byPrice = conf['byPrice']

@@ -26,11 +26,13 @@ def parseTradingHours(tradingHours, tz):
     ranges = tradingHours.split(';')
     m = re.compile('.*:CLOSED')
     for range_ in ranges:
+        if range_ == '':
+            continue
         if m.match(range_): # skip closed days
             continue
         ts = range_.split('-')
         if len(ts) != 2:
-            raise RuntimeError('only two timestamps per range')
+            raise RuntimeError('only two timestamps per range: {}     {}'.format(ts, tradingHours))
         start = datetime.strptime(ts[0], '%Y%m%d:%H%M')
         end = datetime.strptime(ts[1], '%Y%m%d:%H%M')
         r = DateTimeRange(start.replace(tzinfo=tz), end.replace(tzinfo=tz))

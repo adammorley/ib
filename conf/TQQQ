@@ -1,10 +1,15 @@
 ---
-percents: false
-profitTarget: 2
-stopTarget: 1
-dayTarget: 1.0
+symbol=TQQQ
+localSymbol=TQQQ
+percents: true
+profitPercent: 4
+stopPercent: 2
+dayOrder: true
+dayPercent: 2
 trail: false
-qty: 100
-openPositions: 5
+byPrice: true
+dollarAmt: 5000
+openPositions: 2
 buyOutsideRth: false
 sellOutsideRth: true
+detector: threeBarPattern
