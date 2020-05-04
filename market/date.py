@@ -81,10 +81,6 @@ def marketOpenedLessThan(r, td):
     now = datetime.utcnow().replace(tzinfo=pytz.utc)
     if len(r) < 2:
         raise RuntimeError('seems like this might not be a range')
-    #elif td > timedelta(hours=1):
-        #raise RuntimeError('timedelta too large')
-    elif now not in r[0]:
-        raise RuntimeError('market not open')
     elif now - td not in r[0]:
         return True
     return False
