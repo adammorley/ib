@@ -1,3 +1,4 @@
+import inspect
 import logging
 
 from ib_insync.contract import Contract
@@ -24,6 +25,14 @@ class wContract:
         self.ibDetails()
         self.marketRule()
         self.validatePriceIncrement()
+    def __repr__(self):
+        pieces = []
+        for k, v in self.__dict__.items():
+            if inspect.stack()[1].function == '__repr__': # called from upper repr, be concise
+                if k == 'details':
+                    continue
+            pieces.append('{}:{}'.format(k, v))
+        return ','.join(pieces)
 
     def ibContract(self):
         c = None

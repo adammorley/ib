@@ -48,6 +48,7 @@ wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 dataStore, dataStream = detector.setupData(ibc, wc, conf)
 
+portfolioCheck = datetime.datetime.utcnow()
 # what we really want is to extract the "I detected a reason to buy contract n at bar y with reuqirements z"
 # and add the es one as well.
 logging.warn('running trade loop for %s...', wc.symbol)
@@ -79,8 +80,8 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
         except FloatingPointError as e:
             logging.debug('got a NaN %s', e)
 
+    makeTrade = True
     if orderDetails is not None:
-        makeTrade = True
         positions = ibc.positions()
         ibc.sleep(0)
         for p in positions:
@@ -93,6 +94,19 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
             trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
             trade.CheckTradeExecution(trades, orderDetails)
             logging.debug(trades)
+
+    if makeTrade or datetime.datetime.utcnow() > portfolioCheck + datetime.timedelta(minutes=30):
+        portfolioCheck = datetime.datetime.utcnow()
+        pI = ibc.portfolio()
+        for p in pI:
+            out = ''
+            if p.contract == wc.contract:
+                if p.position > 0:
+                    out += 'holding an open position on {} of {}; '.format(p.contract.symbol, p.position)
+                else:
+                    out += 'no open position on {}; '.format(p.contract.symbol)
+                out += 'unrealizedPNL: {}, realizedPNL: {}'.format(p.unrealizedPNL, p.realizedPNL)
+                logging.warn(out)
 
 connect.close(ibc, wc.contract)
 sys.exit(0)
