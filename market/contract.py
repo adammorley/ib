@@ -28,9 +28,8 @@ class wContract:
     def __repr__(self):
         pieces = []
         for k, v in self.__dict__.items():
-            if inspect.stack()[1].function == '__repr__': # called from upper repr, be concise
-                if k == 'details':
-                    continue
+            if inspect.stack()[1].function == '__repr__' and k == 'details':
+                continue # called from upper repr, be concise
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
 
