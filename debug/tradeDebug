@@ -1,0 +1,135 @@
+2020-05-04 17:35:17,196 root WARNING created bracket orders:
+	buyOrder:Order(action='BUY', totalQuantity=1, orderType='LMT', lmtPrice=2806.5, tif='DAY', transmit=False, outsideRth=True),
+	profitOrder:Order(action='SELL', totalQuantity=1, orderType='LMT', lmtPrice=2809.5, tif='GTC', transmit=False, outsideRth=True),
+	stopOrder:Order(action='SELL', totalQuantity=1, orderType='STP', auxPrice=2799.5, tif='GTC', outsideRth=True)
+
+^ this is my code
+
+2020-05-04 17:35:17,196 ib_insync.ib INFO placeOrder:
+	New order 
+		Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+			order=Order(orderId=20, clientId=79, action='BUY', totalQuantity=1, orderType='LMT', lmtPrice=2806.5, tif='DAY', transmit=False, outsideRth=True), 
+			orderStatus=OrderStatus(orderId=20, status='PendingSubmit', filled=0, remaining=0, avgFillPrice=0.0, permId=0, parentId=0, lastFillPrice=0.0, clientId=0, whyHeld='', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+			log=[
+				TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 196629, tzinfo=datetime.timezone.utc), status='PendingSubmit', message='')])
+2020-05-04 17:35:17,197 ib_insync.ib INFO placeOrder: 
+	New order 
+		Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+        		order=Order(orderId=21, clientId=79, action='SELL', totalQuantity=1, orderType='LMT', lmtPrice=2809.5, tif='GTC', transmit=False, parentId=20, outsideRth=True), 
+        		orderStatus=OrderStatus(orderId=21, status='PendingSubmit', filled=0, remaining=0, avgFillPrice=0.0, permId=0, parentId=0, lastFillPrice=0.0, clientId=0, whyHeld='', mktCapPrice=0.0, lastLiquidity=0), fills=[],
+        		log=[
+				TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 197213, tzinfo=datetime.timezone.utc), status='PendingSubmit', message='')])
+2020-05-04 17:35:17,197 ib_insync.ib INFO placeOrder: 
+	New order 
+		Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+			order=Order(orderId=22, clientId=79, action='SELL', totalQuantity=1, orderType='STP', auxPrice=2799.5, tif='GTC', parentId=20, outsideRth=True), 
+			orderStatus=OrderStatus(orderId=22, status='PendingSubmit', filled=0, remaining=0, avgFillPrice=0.0, permId=0, parentId=0, lastFillPrice=0.0, clientId=0, whyHeld='', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+			log=[
+				TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 197682, tzinfo=datetime.timezone.utc), status='PendingSubmit', message='')])
+
+^ this comes back from the placeorder call (in the underlying)
+2020-05-04 17:35:17,206 ib_insync.wrapper INFO Warning 2109, reqId 20: Order Event Warning:Attribute 'Outside Regular Trading Hours' is ignored based on the order type and destination. PlaceOrder is now being processed.
+2020-05-04 17:35:17,206 ib_insync.wrapper INFO Warning 2109, reqId 21: Order Event Warning:Attribute 'Outside Regular Trading Hours' is ignored based on the order type and destination. PlaceOrder is now being processed.
+
+2020-05-04 17:35:17,273 ib_insync.wrapper INFO 
+	orderStatus: 
+	Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+		order=Order(orderId=21, clientId=79, permId=1920879378, action='SELL', totalQuantity=1.0, orderType='LMT', lmtPrice=2809.5, auxPrice=0.0, tif='GTC', ocaGroup='1920879377', ocaType=3, parentId=20, trailStopPrice=2810.5, volatilityType=0, deltaNeutralOrderType='None', referencePriceType=0, account='DU2101955', clearingIntent='IB', adjustedOrderType='None', dontUseAutoPriceForHedge=True), 
+		orderStatus=OrderStatus(orderId=21, status='PreSubmitted', filled=0.0, remaining=1.0, avgFillPrice=0.0, permId=1920879378, parentId=20, lastFillPrice=0.0, clientId=79, whyHeld='child,locate', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+		log=[
+			TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 197213, tzinfo=datetime.timezone.utc), status='PendingSubmit', message=''), 
+			TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 272439, tzinfo=datetime.timezone.utc), status='PreSubmitted', message='')])
+
+2020-05-04 17:35:17,275 ib_insync.wrapper INFO 
+	orderStatus: 
+	Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+		order=Order(orderId=22, clientId=79, permId=1920879379, action='SELL', totalQuantity=1.0, orderType='STP', lmtPrice=0.0, auxPrice=2799.5, tif='GTC', ocaGroup='1920879377', ocaType=3, parentId=20, outsideRth=True, trailStopPrice=2799.5, volatilityType=0, deltaNeutralOrderType='None', referencePriceType=0, account='DU2101955', clearingIntent='IB', adjustedOrderType='None', dontUseAutoPriceForHedge=True), 
+		orderStatus=OrderStatus(orderId=22, status='PreSubmitted', filled=0.0, remaining=1.0, avgFillPrice=0.0, permId=1920879379, parentId=20, lastFillPrice=0.0, clientId=79, whyHeld='child,locate,trigger', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+		log=[
+			TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 197682, tzinfo=datetime.timezone.utc), status='PendingSubmit', message=''), 
+			TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 274798, tzinfo=datetime.timezone.utc), status='PreSubmitted', message='')])
+
+2020-05-04 17:35:17,292 ib_insync.wrapper INFO 
+	orderStatus: 
+	Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+		order=Order(orderId=20, clientId=79, permId=1920879377, action='BUY', totalQuantity=1.0, orderType='LMT', lmtPrice=2806.5, auxPrice=0.0, tif='DAY', ocaType=3, trailStopPrice=2807.5, volatilityType=0, deltaNeutralOrderType='None', referencePriceType=0, account='DU2101955', clearingIntent='IB', adjustedOrderType='None', dontUseAutoPriceForHedge=True), 
+		orderStatus=OrderStatus(orderId=20, status='Submitted', filled=0.0, remaining=1.0, avgFillPrice=0.0, permId=1920879377, parentId=0, lastFillPrice=0.0, clientId=79, whyHeld='', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+		log=[
+			TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 196629, tzinfo=datetime.timezone.utc), status='PendingSubmit', message=''), 
+			TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 291648, tzinfo=datetime.timezone.utc), status='Submitted', message='')])
+
+^ those three show that the buy was submitted and the others are waiting.  they get the permId here.
+
+2020-05-04 17:35:18,313 ib_insync.wrapper INFO 
+	position: 
+		Position(account='DU2101955', contract=Future(conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', currency='USD', localSymbol='ESM0', tradingClass='ES'), position=1.0, avgCost=140325.0)
+
+2020-05-04 17:35:18,317 ib_insync.wrapper INFO 
+	execDetails 
+	Execution(execId='0000e1a7.5eb02342.01.01', time='20200504  17:35:18', acctNumber='DU2101955', exchange='GLOBEX', side='BOT', shares=1.0, price=2806.5, permId=1920879377, clientId=79, orderId=20, liquidation=0, cumQty=1.0, avgPrice=2806.5, orderRef='', evRule='', evMultiplier=0.0, modelCode='', lastLiquidity=1)
+
+2020-05-04 17:35:18,318 ib_insync.wrapper INFO 
+	execDetails: 
+	Fill(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+	execution=Execution(execId='0000e1a7.5eb02342.01.01', time=datetime.datetime(2020, 5, 4, 17, 35, 18, tzinfo=datetime.timezone.utc), acctNumber='DU2101955', exchange='GLOBEX', side='BOT', shares=1.0, price=2806.5, permId=1920879377, clientId=79, orderId=20, liquidation=0, cumQty=1.0, avgPrice=2806.5, orderRef='', evRule='', evMultiplier=0.0, modelCode='', lastLiquidity=1), commissionReport=CommissionReport(execId='', commission=0.0, currency='', realizedPNL=0.0, yield_=0.0, yieldRedemptionDate=0), time=datetime.datetime(2020, 5, 4, 17, 35, 18, 317856, tzinfo=datetime.timezone.utc))
+
+2020-05-04 17:35:18,319 ib_insync.wrapper INFO 
+	orderStatus: 
+	Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+	order=Order(orderId=20, clientId=79, permId=1920879377, action='BUY', totalQuantity=1.0, orderType='LMT', lmtPrice=2806.5, auxPrice=0.0, tif='DAY', ocaType=3, trailStopPrice=2807.5, volatilityType=0, deltaNeutralOrderType='None', referencePriceType=0, account='DU2101955', clearingIntent='IB', adjustedOrderType='None', dontUseAutoPriceForHedge=True), 
+	orderStatus=OrderStatus(orderId=20, status='Filled', filled=1.0, remaining=0.0, avgFillPrice=2806.5, permId=1920879377, parentId=0, lastFillPrice=2806.5, clientId=79, whyHeld='', mktCapPrice=0.0, lastLiquidity=0), 
+	fills=[
+		Fill(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), execution=Execution(execId='0000e1a7.5eb02342.01.01', time=datetime.datetime(2020, 5, 4, 17, 35, 18, tzinfo=datetime.timezone.utc), acctNumber='DU2101955', exchange='GLOBEX', side='BOT', shares=1.0, price=2806.5, permId=1920879377, clientId=79, orderId=20, liquidation=0, cumQty=1.0, avgPrice=2806.5, orderRef='', evRule='', evMultiplier=0.0, modelCode='', lastLiquidity=1), commissionReport=CommissionReport(execId='', commission=0.0, currency='', realizedPNL=0.0, yield_=0.0, yieldRedemptionDate=0), time=datetime.datetime(2020, 5, 4, 17, 35, 18, 317856, tzinfo=datetime.timezone.utc))], 
+	log=[
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 196629, tzinfo=datetime.timezone.utc), status='PendingSubmit', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 291648, tzinfo=datetime.timezone.utc), status='Submitted', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 18, 317856, tzinfo=datetime.timezone.utc), status='Submitted', message='Fill 1.0@2806.5'), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 18, 318942, tzinfo=datetime.timezone.utc), status='Filled', message='')])
+
+2020-05-04 17:35:18,321 ib_insync.wrapper INFO 
+	orderStatus: 
+	Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+	order=Order(orderId=21, clientId=79, permId=1920879378, action='SELL', totalQuantity=1.0, orderType='LMT', lmtPrice=2809.5, auxPrice=0.0, tif='GTC', ocaGroup='1920879377', ocaType=3, parentId=20, trailStopPrice=2810.5, openClose='C', eTradeOnly=False, firmQuoteOnly=False, volatilityType=0, deltaNeutralOrderType='None', referencePriceType=0, account='DU2101955', clearingIntent='IB', adjustedOrderType='None', dontUseAutoPriceForHedge=True), 
+	orderStatus=OrderStatus(orderId=21, status='PreSubmitted', filled=0.0, remaining=1.0, avgFillPrice=0.0, permId=1920879378, parentId=20, lastFillPrice=0.0, clientId=79, whyHeld='locate', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+	log=[
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 197213, tzinfo=datetime.timezone.utc), status='PendingSubmit', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 272439, tzinfo=datetime.timezone.utc), status='PreSubmitted', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 18, 321092, tzinfo=datetime.timezone.utc), status='PreSubmitted', message='')])
+
+2020-05-04 17:35:18,323 ib_insync.wrapper INFO commissionReport: CommissionReport(execId='0000e1a7.5eb02342.01.01', commission=2.1, currency='USD', realizedPNL=0.0, yield_=0.0, yieldRedemptionDate=0)
+
+2020-05-04 17:35:18,325 ib_insync.wrapper INFO 
+	orderStatus: 
+	Trade(contract=Contract(secType='FUT', conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', multiplier='50', exchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), 
+	order=Order(orderId=21, clientId=79, permId=1920879378, action='SELL', totalQuantity=1.0, orderType='LMT', lmtPrice=2809.5, auxPrice=0.0, tif='GTC', ocaGroup='1920879377', ocaType=3, parentId=20, trailStopPrice=2810.5, openClose='C', eTradeOnly=False, firmQuoteOnly=False, volatilityType=0, deltaNeutralOrderType='None', referencePriceType=0, account='DU2101955', clearingIntent='IB', adjustedOrderType='None', dontUseAutoPriceForHedge=True), 
+	orderStatus=OrderStatus(orderId=21, status='Submitted', filled=0.0, remaining=1.0, avgFillPrice=0.0, permId=1920879378, parentId=20, lastFillPrice=0.0, clientId=79, whyHeld='', mktCapPrice=0.0, lastLiquidity=0), fills=[], 
+	log=[
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 197213, tzinfo=datetime.timezone.utc), status='PendingSubmit', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 17, 272439, tzinfo=datetime.timezone.utc), status='PreSubmitted', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 18, 321092, tzinfo=datetime.timezone.utc), status='PreSubmitted', message=''), 
+		TradeLogEntry(time=datetime.datetime(2020, 5, 4, 17, 35, 18, 325145, tzinfo=datetime.timezone.utc), status='Submitted', message='')])
+
+^ those two show the submits of the other orders after execution/fill of the buy
+
+2020-05-04 17:35:19,201 root WARNING entered a BUY order for ES; perm order IDs: 1920879377, 1920879378, 1920879379
+
+
+
+2020-05-04 19:35:53,533 ib_insync.wrapper INFO 
+	updatePortfolio: 
+	PortfolioItem(
+		contract=Stock(conId=72539702, symbol='TQQQ', right='0', primaryExchange='NASDAQ', currency='USD', localSymbol='TQQQ', tradingClass='NMS'),
+		position=158.0, 
+		marketPrice=65.4599991, 
+		marketValue=10342.68, 
+		averageCost=63.17765825, 
+		unrealizedPNL=360.61, 
+		realizedPNL=0.0, 
+		account='DU2101955')
+
+2020-05-04 19:35:53,534 ib_insync.wrapper INFO updatePortfolio: PortfolioItem(contract=Stock(conId=290651239, symbol='AAP2', right='0', primaryExchange='LSE', currency='USD', localSymbol='AAP2', tradingClass='AAP2'), position=1.0, marketPrice=41.29631425, marketValue=41.3, averageCost=40.08, unrealizedPNL=1.22, realizedPNL=0.0, account='DU2101955')
+2020-05-04 19:35:53,534 ib_insync.wrapper INFO updatePortfolio: PortfolioItem(contract=Stock(conId=298723656, symbol='GOO2', right='0', primaryExchange='LSE', currency='USD', localSymbol='GOO2', tradingClass='GOO2'), position=223.0, marketPrice=22.70954515, marketValue=5064.23, averageCost=21.9026906, unrealizedPNL=179.93, realizedPNL=0.0, account='DU2101955')
+2020-05-04 19:35:53,534 ib_insync.wrapper INFO updatePortfolio: PortfolioItem(contract=Stock(conId=298724307, symbol='FB2', right='0', primaryExchange='LSE', currency='USD', localSymbol='FB2', tradingClass='FB2'), position=1.0, marketPrice=16.1440296, marketValue=16.14, averageCost=14.61, unrealizedPNL=1.53, realizedPNL=0.0, account='DU2101955')
+2020-05-04 19:35:53,535 ib_insync.wrapper INFO updatePortfolio: PortfolioItem(contract=Stock(conId=298928013, symbol='MSF2', right='0', primaryExchange='LSE', currency='USD', localSymbol='MSF2', tradingClass='MSF2'), position=1.0, marketPrice=64.9556122, marketValue=64.96, averageCost=65.13, unrealizedPNL=-0.17, realizedPNL=0.0, account='DU2101955')
+2020-05-04 19:35:53,535 ib_insync.wrapper INFO updatePortfolio: PortfolioItem(contract=Stock(conId=298928037, symbol='VIS2', right='0', primaryExchange='LSE', currency='USD', localSymbol='VIS2', tradingClass='VIS2'), position=111.0, marketPrice=36.2095299, marketValue=4019.26, averageCost=41.87, unrealizedPNL=-628.31, realizedPNL=0.0, account='DU2101955')
+2020-05-04 19:35:53,535 ib_insync.wrapper INFO updatePortfolio: PortfolioItem(contract=Future(conId=357283364, symbol='ES', lastTradeDateOrContractMonth='20200619', right='0', multiplier='50', primaryExchange='GLOBEX', currency='USD', localSymbol='ESM0', tradingClass='ES'), position=0.0, marketPrice=2833.0, marketValue=0.0, averageCost=0.0, unrealizedPNL=0.0, realizedPNL=-271.0, account='DU2101955')
