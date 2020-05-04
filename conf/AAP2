@@ -1,0 +1,14 @@
+---
+symbol=AAP2
+localSymbol=AAP2
+percents: true
+profitPercent: 8
+stopPercent: 5
+dayOrder: true
+dayPercent: 5
+trail: true
+byPrice: true
+dollarAmt: 5000
+openPositions: 1
+buyOutsideRth: false
+sellOutsideRth: true
