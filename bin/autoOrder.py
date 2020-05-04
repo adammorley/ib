@@ -63,7 +63,8 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
         dataRefresh = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         ibc.cancelHistoricalData(dataStream)
         ibc.sleep(0)
-        dataStream = data.getHistData(wc, ibc, barSizeStr=barSizeStr, longInterval=detector.EMA.longInterval)
+        useRth = False if conf.buyOutsideRth else True
+        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=detector.EMA.longInterval, r=useRth, k=True)
 
     buyPrice = None
     if conf.detector == 'threeBarPattern':

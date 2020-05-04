@@ -22,9 +22,9 @@ def setupData(ibc, wc, conf, backtestArgs=None):
     elif conf.detector == 'threeBarPattern':
         dataStream = data.getTicker(wc, ibc)
     elif conf.detector == 'emaCrossover':
-        barSizeStr = '1 min'
         dataStore = EMA(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
-        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval)
+        useRth = False if conf.buyOutsideRth else True
+        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth, k=True)
         dataStore.calcInitEMAs(dataStream)
     else:
         raise RuntimeError('do not know what to do!')
