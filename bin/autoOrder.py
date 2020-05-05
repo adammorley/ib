@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import pytz
 import sys
 
 from ib_insync import *
@@ -24,6 +25,9 @@ parser.add_argument('--prod', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true', default=None)
 parser.add_argument('--info', action='store_true', default=None)
 args = parser.parse_args()
+
+def now():
+    return datetime.datetime.utcnow().astimezone(pytz.utc)
 
 def isMaxQty(p, conf):
     if conf.byPrice:
@@ -48,7 +52,7 @@ def checkForHold(ibc, wc):
             out += 'marketPrice: {} unrealizedPNL: {}, realizedPNL: {}'.format(p.marketPrice, p.unrealizedPNL, p.realizedPNL)
             logging.warn(out)
 
-startTime = datetime.datetime.utcnow()
+startTime = now()
 dataRefresh = startTime + datetime.timedelta(hours=1)
 
 ibc = connect.connect(args.debug, args.prod)
@@ -61,20 +65,20 @@ wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 dataStore, dataStream = detector.setupData(ibc, wc, conf)
 
 checkForHold(ibc, wc)
-portfolioCheck = datetime.datetime.utcnow()
+portfolioCheck = now()
 # what we really want is to extract the "I detected a reason to buy contract n at bar y with reuqirements z"
 # and add the es one as well.
 logging.warn('running trade loop for %s...', wc.symbol)
-while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
+while now() < startTime + datetime.timedelta(hours=20):
     if not date.isMarketOpen( date.parseOpenHours(wc.details) ):
         logging.warn('market closed, waiting to open')
         ibc.sleep(60 * 5)
     # when running overnight, the historical data stream once got "stuck" and the EMAs were not updating.
     # so if we've run for longer than an hour, just refect the historical data and the old one will
     # get garbage collected.
-    elif conf.detector == 'emaCrossover' and datetime.datetime.utcnow() > dataRefresh:
+    elif conf.detector == 'emaCrossover' and datetime.datetime.utcnow().astimezone(pytz.utc) > dataRefresh:
         logging.warn('refreshing historical data to avoid stale data.')
-        dataRefresh = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        dataRefresh = datetime.datetime.utcnow().astimezone(pytz.utc) + datetime.timedelta(hours=1)
         ibc.cancelHistoricalData(dataStream)
         ibc.sleep(0)
         useRth = False if conf.buyOutsideRth else True
@@ -108,8 +112,8 @@ while datetime.datetime.utcnow() < startTime + datetime.timedelta(hours=20):
             trade.CheckTradeExecution(trades, orderDetails)
             logging.debug(trades)
 
-    if datetime.datetime.utcnow() > portfolioCheck + datetime.timedelta(minutes=30):
-        portfolioCheck = datetime.datetime.utcnow()
+    if datetime.datetime.utcnow().astimezone(pytz.utc) > portfolioCheck + datetime.timedelta(minutes=30):
+        portfolioCheck = datetime.datetime.utcnow().astimezone(pytz.utc)
         checkForHold(ibc, wc)
 
 connect.close(ibc, wc.contract)

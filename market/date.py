@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 import pytz
 import re
 
@@ -12,10 +13,9 @@ def parseOpenHours(cd):
 def parseTimezone(timeZoneId):
     if not isinstance(timeZoneId, str):
         raise RuntimeError('timeZoneId should be a string')
-    for tz in pytz.all_timezones:
-        if tz == timeZoneId:
-            return pytz.timezone(tz)
-    raise RuntimeError('not reachable')
+    if timeZoneId == 'America/Belize': # CME/GLOBEX is in chicago not belize.
+        timeZoneId = 'America/Chicago'
+    return pytz.timezone(timeZoneId)
 
 # parse the contract details into datetime objects
 def parseTradingHours(tradingHours, tz):
@@ -33,12 +33,13 @@ def parseTradingHours(tradingHours, tz):
         ts = range_.split('-')
         if len(ts) != 2:
             raise RuntimeError('only two timestamps per range: {}     {}'.format(ts, tradingHours))
-        start = datetime.strptime(ts[0], '%Y%m%d:%H%M')
-        end = datetime.strptime(ts[1], '%Y%m%d:%H%M')
-        r = DateTimeRange(start.replace(tzinfo=tz), end.replace(tzinfo=tz))
+        start = tz.localize(datetime.strptime(ts[0], '%Y%m%d:%H%M')).astimezone(pytz.utc)
+        end = tz.localize(datetime.strptime(ts[1], '%Y%m%d:%H%M')).astimezone(pytz.utc)
+        r = DateTimeRange(start, end)
         if not r.is_valid_timerange():
             raise RuntimeError('should get a valid timerange')
         openHours.append(r)
+    logging.debug('openHours: %s', openHours)
     return openHours
 
 def createIntersectedRange(r0, r1):
@@ -57,9 +58,9 @@ def createIntersectedRanges(r0, r1):
     return intersect
 
 def getNextOpenTime(r):
-    d = datetime.utcnow()
+    d = datetime.utcnow().astimezone(pytz.utc)
     d = d + timedelta(hours=1)
-    d = d.replace(minute=0, second=0, microsecond=0, tzinfo=pytz.utc)
+    d = d.replace(minute=0, second=0, microsecond=0)
     for r_ in r:
         t = d
         n = 0
@@ -71,16 +72,19 @@ def getNextOpenTime(r):
     return None
 
 def isMarketOpen(r):
-    now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    now = datetime.utcnow().astimezone(pytz.utc)
     for r_ in r:
         if now in r_:
             return True
     return False
 
 def marketOpenedLessThan(r, td):
-    now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    now = datetime.utcnow().astimezone(pytz.utc)
     if len(r) < 2:
         raise RuntimeError('seems like this might not be a range')
-    elif now - td not in r[0]:
-        return True
+    for r_ in r:
+        if now not in r_:
+            continue
+        elif now - td not in r_:
+            return True
     return False
