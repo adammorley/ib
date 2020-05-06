@@ -13,8 +13,6 @@ def parseOpenHours(cd):
 def parseTimezone(timeZoneId):
     if not isinstance(timeZoneId, str):
         raise RuntimeError('timeZoneId should be a string')
-    if timeZoneId == 'America/Belize': # CME/GLOBEX is in chicago not belize.
-        timeZoneId = 'America/Chicago'
     return pytz.timezone(timeZoneId)
 
 # parse the contract details into datetime objects

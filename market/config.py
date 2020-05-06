@@ -30,6 +30,8 @@ class Config:
     dayPercent: float
     dayTarget: float
     trail: bool
+    buyAON: bool = False
+    buyFOK: bool = False
     qty: int
     openPositions: int
     buyOutsideRth: bool
@@ -58,6 +60,10 @@ def ProcessConfig(conf, detectorOn=None):
     config.percents = conf['percents']
     config.dayOrder = conf['dayOrder']
     config.byPrice = conf['byPrice']
+    if conf['buyAON']:
+        config.buyAON = conf['buyAON']
+    if conf['buyFOK']:
+        config.buyFOK = conf['buyFOK']
 
     config.bufferAmt = conf['bufferAmt']
 

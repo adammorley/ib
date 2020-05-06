@@ -62,6 +62,11 @@ class wContract:
         if len(r) != 1 or r[0].contract != self.contract:
             raise LookupError('problem getting contract details: %s', r)
         self.details = r[0]
+        self.handleGlobexTimeZone()
+
+    def handleGlobexTimeZone(self):
+        if self.contract.exchange == 'GLOBEX' and self.details.timeZoneId == 'America/Belize': # CME/GLOBEX is in chicago not belize.
+            self.details.timeZoneId = 'America/Chicago'
 
     def marketRule(self):
         if not isinstance(self.details.marketRuleIds, str):
