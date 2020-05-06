@@ -162,3 +162,4 @@ def whatIfOrder(order):
     wio = copy.deepcopy(order)
     wio.transmit = True
     wio.whatIf = True
+    return wio
