@@ -107,7 +107,7 @@ while now() < startTime + datetime.timedelta(hours=20):
         makeTrade = True
         positions = ibc.positions()
         ibc.sleep(0)
-        if not order.validateFunds(ibc, conf.account, orderDetails):
+        if not order.validateFunds(ibc, orderDetails):
             logging.warn('not enough funds to place a trade.')
             makeTrade = False
         for p in positions:
