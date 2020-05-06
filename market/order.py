@@ -151,9 +151,9 @@ def CreateBracketOrder(orderDetails, account=None):
     return orders
 
 from market import account
-def validateFunds(ibc, account, orderDetails):
+def validateFunds(ibc, acct, orderDetails):
     qty = calculateQty(orderDetails)
-    af = account.availableFunds(ibc, account)
+    af = account.availableFunds(ibc, acct)
     if orderDetails.buyPrice * qty > af + orderDetails.config.bufferAmt:
         return False
     return True
