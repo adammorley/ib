@@ -1,4 +1,5 @@
 ---
+account: DU2101955
 symbol: ES
 localSymbol: ESM0
 percents: false
@@ -7,10 +8,12 @@ stopTarget: 7
 dayOrder: false
 trail: false
 byPrice: false
+bufferAmt: 30000
 qty: 1
 openPositions: 3
 buyOutsideRth: true
 sellOutsideRth: true
+greyzone: 15
 detector: emaCrossover
 longEMA: 20
 shortEMA: 5

@@ -34,8 +34,10 @@ class Config:
     openPositions: int
     buyOutsideRth: bool
     sellOutsideRth: bool
+    greyzone: int # number of minutes before market close to not place new trades
     byPrice: bool
     dollarAmt: float
+    bufferAmt: float # used by order creation to keep money aside, untouched.
     detector: str
     barSizeStr: str
     longEMA: int
@@ -50,11 +52,14 @@ class Config:
 def ProcessConfig(conf, detectorOn=None):
     config = Config()
 
+    config.account = conf['account']
     config.symbol = conf['symbol']
     config.localSymbol = conf['localSymbol']
     config.percents = conf['percents']
     config.dayOrder = conf['dayOrder']
     config.byPrice = conf['byPrice']
+
+    config.bufferAmt = conf['bufferAmt']
 
     if config.byPrice:
         config.dollarAmt = conf['dollarAmt']
@@ -81,6 +86,7 @@ def ProcessConfig(conf, detectorOn=None):
         config.detector = conf['detector']
         config.barSizeStr = conf['barSizeStr']
         if config.detector == 'emaCrossover':
+            config.greyzone = conf['greyzone']
             config.shortEMA = conf['shortEMA']
             config.longEMA = conf['longEMA']
             config.watchCount = conf['watchCount']

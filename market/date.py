@@ -48,6 +48,7 @@ def createIntersectedRange(r0, r1):
         return r
     return None
 
+# can be used to intersect the NYSE and LSE for example
 def createIntersectedRanges(r0, r1):
     intersect = []
     for r0_ in r0:
@@ -71,10 +72,11 @@ def getNextOpenTime(r):
             return t
     return None
 
-def isMarketOpen(r):
-    now = datetime.utcnow().astimezone(pytz.utc)
+def isMarketOpen(r, dt=None):
+    if dt is None:
+        dt = datetime.utcnow().astimezone(pytz.utc)
     for r_ in r:
-        if now in r_:
+        if dt in r_:
             return True
     return False
 

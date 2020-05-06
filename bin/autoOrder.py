@@ -8,6 +8,7 @@ import sys
 from ib_insync import *
 
 sys.path.append(r'.')
+from market import account
 from market import bars
 from market import config
 from market import connect
@@ -55,10 +56,11 @@ def checkForHold(ibc, wc):
 startTime = now()
 dataRefresh = startTime + datetime.timedelta(hours=1)
 
-ibc = connect.connect(args.debug, args.prod)
+conf = config.getConfig(args.conf, detectorOn=True)
+ibc = connect.connect(conf.account, args.debug, args.prod)
 if args.info:
     util.logToConsole(logging.INFO)
-conf = config.getConfig(args.conf, detectorOn=True)
+account.summary(ibc, conf.account)
 
 wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
@@ -70,6 +72,10 @@ portfolioCheck = now()
 # and add the es one as well.
 logging.warn('running trade loop for %s...', wc.symbol)
 while now() < startTime + datetime.timedelta(hours=20):
+    if not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
+        logging.warn('market closing soon, waiting for close [will restart analysis on open]')
+        ibc.sleep(60 * conf.greyzone)
+
     if not date.isMarketOpen( date.parseOpenHours(wc.details) ):
         logging.warn('market closed, waiting to open')
         ibc.sleep(60 * 5)
@@ -101,13 +107,16 @@ while now() < startTime + datetime.timedelta(hours=20):
         makeTrade = True
         positions = ibc.positions()
         ibc.sleep(0)
+        if not order.validateFunds(ibc, conf.account, orderDetails):
+            logging.warn('not enough funds to place a trade.')
+            makeTrade = False
         for p in positions:
             if p.contract == wc.contract and isMaxQty(p, conf):
                 logging.warn('passing on trade as max positions already open')
                 makeTrade = False
 
         if makeTrade:
-            orders = order.CreateBracketOrder(orderDetails)
+            orders = order.CreateBracketOrder(orderDetails, conf.account)
             trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
             trade.CheckTradeExecution(trades, orderDetails)
             logging.debug(trades)

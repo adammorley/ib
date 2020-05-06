@@ -37,7 +37,7 @@ from market.order import OrderDetails
 orderDetails = OrderDetails(buyPrice, conf, wc)
 logging.warn('created an order for contract %s %s', wc.contract, orderDetails)
 
-orders = order.CreateBracketOrder(orderDetails)
+orders = order.CreateBracketOrder(orderDetails, conf.account)
 
 if args.go is not None:
     trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)

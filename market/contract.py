@@ -83,7 +83,7 @@ class wContract:
                     penny = True
             if not penny:
                 raise RuntimeError('multiple price incmrenets {} {}'.format(self.details, self.marketRule))
-            logging.warn('default to a penny for the increment, multiple price increments found {} {}'.format(self.marketRule, self.details))
+            logging.warn('default to a penny for the increment, multiple price increments found {} {}'.format(self.marketRule, self.symbol))
             self.priceIncrement = 0.01
         else:
             self.priceIncrement = self.marketRule[0].increment

@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from market.contract import wContract
@@ -89,11 +90,12 @@ def calculateQty(od):
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 # order matters, see class note
-def CreateBracketOrder(orderDetails):
+def CreateBracketOrder(orderDetails, account=None):
     qty = calculateQty(orderDetails)
     orders = BracketOrder()
 
     orders.buyOrder = Order()
+    orders.buyOrder.account = account
     orders.buyOrder.transmit = False
     orders.buyOrder.action = 'BUY'
     orders.buyOrder.totalQuantity = qty
@@ -104,6 +106,7 @@ def CreateBracketOrder(orderDetails):
 
     profitPrice = calculateProfitPrice(orderDetails)
     orders.profitOrder = Order()
+    orders.profitOrder.account = account
     orders.profitOrder.transmit = False
     orders.profitOrder.action = 'SELL'
     orders.profitOrder.totalQuantity = qty
@@ -115,6 +118,7 @@ def CreateBracketOrder(orderDetails):
     if orderDetails.config.dayOrder:
         dayPrice = calculateDayPrice(orderDetails)
         orders.dayOrder = Order()
+        orders.dayOrder.account = account
         orders.dayOrder.transmit = False
         orders.dayOrder.action = 'SELL'
         orders.dayOrder.totalQuantity = qty
@@ -124,6 +128,7 @@ def CreateBracketOrder(orderDetails):
         orders.dayOrder.outsideRth = orderDetails.config.sellOutsideRth
 
     orders.stopOrder = Order()
+    orders.stopOrder.account = account
     orders.stopOrder.transmit = True
     orders.stopOrder.action = 'SELL'
     orders.stopOrder.totalQuantity = qty
@@ -144,3 +149,16 @@ def CreateBracketOrder(orderDetails):
     orderDetails.buyPrice = orders.buyOrder.lmtPrice # for debugging clarity
     logging.warn('created bracket orders: %s', orders)
     return orders
+
+from market import account
+def validateFunds(ibc, account, orderDetails):
+    qty = calculateQty(orderDetails)
+    af = account.availableFunds(ibc, account)
+    if orderDetails.buyPrice * qty > af + orderDetails.config.bufferAmt:
+        return False
+    return True
+
+def whatIfOrder(order):
+    wio = copy.deepcopy(order)
+    wio.transmit = True
+    wio.whatIf = True
