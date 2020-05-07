@@ -1,6 +1,19 @@
 import logging
 import re
 
+def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
+    rHdmsQueryCanceled = 162 # re.compile('.*?API historical data query cancelled.*?')
+    rMdfOk = 2104 # re.compile('.*?Market data farm connection is OK.*?')
+    rHdmsOk = 2106 # re.compile('.*?HMDS data farm connection is OK.*?')
+    rMdfC = 2119 # re.compile('.*?Market data farm is connecting.*?')
+    errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsOk, rMdfC)
+    notFound = True
+    for ec in errorCodes:
+        if errorCode == ec:
+            notFound = False
+    if notFound:
+        logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(errorCode, reqId, errorString))
+
 def histDataStreamError(reqId, errorCode, errorString, contract):
     r = re.compile('.*?API historical data query cancelled.*?')
     if errorCode != 162 and not r.match(errorString):
