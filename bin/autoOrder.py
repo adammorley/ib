@@ -54,7 +54,6 @@ def checkForHold(ibc, wc):
             logging.warn(out)
 
 startTime = now()
-dataRefresh = startTime + datetime.timedelta(hours=1)
 
 conf = config.getConfig(args.conf, detectorOn=True)
 ibc = connect.connect(conf.account, args.debug, args.prod)
@@ -79,16 +78,6 @@ while now() < startTime + datetime.timedelta(hours=20):
     elif not date.isMarketOpen( date.parseOpenHours(wc.details) ):
         logging.warn('market closed, waiting to open')
         ibc.sleep(60 * 5)
-    # when running overnight, the historical data stream once got "stuck" and the EMAs were not updating.
-    # so if we've run for longer than an hour, just refect the historical data and the old one will
-    # get garbage collected.
-    elif conf.detector == 'emaCrossover' and now() > dataRefresh:
-        logging.warn('refreshing historical data to avoid stale data.')
-        dataRefresh = datetime.datetime.utcnow().astimezone(pytz.utc) + datetime.timedelta(hours=1)
-        ibc.cancelHistoricalData(dataStream)
-        ibc.sleep(0)
-        useRth = False if conf.buyOutsideRth else True
-        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=detector.EMA.longInterval, r=useRth, k=True)
 
     buyPrice = None
     if conf.detector == 'threeBarPattern':

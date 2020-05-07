@@ -14,11 +14,6 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     if notFound:
         logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(errorCode, reqId, errorString))
 
-def histDataStreamError(reqId, errorCode, errorString, contract):
-    r = re.compile('.*?API historical data query cancelled.*?')
-    if errorCode != 162 and not r.match(errorString):
-        logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(errorCode, reqId, errorString))
-
 # defaults to getting auto-updated midpoint (bid/ask middle) outside regular trading hours for > 200 minutes with 1 min segments
 # using utc timezones.  the final datapoint is the current minute, so len(histData)-2 is full last minute while -3 is prior window
 # can feed to EMA and SMA to get the EMA on the fly
@@ -26,7 +21,7 @@ def histDataStreamError(reqId, errorCode, errorString, contract):
 # duration (d) is specified in number of barSizes via lookupDuration
 # FIXME: this kind of sucks
 barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
-def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=True):
+def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=False):
     duration = barSizeToDuration[barSizeStr]
     if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
         raise RuntimeError('using seconds is supported')
@@ -34,7 +29,7 @@ def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r
     if d is not None: # we're doing a backtest, so add the long interval to build the SMA
         d = d *60*24 + longInterval
     else:
-        d = longInterval * 2 + 5
+        d = 2 * longInterval
 
     durationStr = ''
     if d > 1440: # d is in minutes because barSizeToDuration supports minutes atm
@@ -77,15 +72,11 @@ def getTicker(wc, ibc):
 # end = len(histData)-1
 #
 # so using SMA for the ``first'' EMA is now possible and calculating the EMA at any given time is ok
-def calcSMA(n, histData, tailOffset=3):
-    i = len(histData) - tailOffset
-    j = n
+def calcSMA(interval, histData, startIndex):
     sma = 0
-    while j > 0:
-        sma += histData[i].close
-        i -= 1
-        j -= 1
-    return sma / n
+    for i in range(startIndex, startIndex+interval):
+        sma += histData[i].midpoint()
+    return sma/interval
 
 # exponential moving average (higher weighting recent data)
 #

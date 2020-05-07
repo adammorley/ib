@@ -28,9 +28,13 @@ def setupData(ibc, wc, conf, backtestArgs=None):
         logging.getLogger('ib_insync.wrapper').setLevel(logging.CRITICAL)
         ibc.errorEvent += data.dataStreamErrorHandler
 
+        dataStream = data.getTicker(wc, ibc)
+        ibc.sleep(0)
+
         useRth = False if conf.buyOutsideRth else True
-        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth, k=True)
-        dataStore.calcInitEMAs(dataStream)
+        histData = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
+        dataStore.calcInitEMAs(histData)
+        ibc.cancelHistoricalData(histData)
     else:
         raise RuntimeError('do not know what to do!')
     return dataStore, dataStream
@@ -131,23 +135,23 @@ class EMA:
                 if self.byPeriod:
                     startIndex = len(dataStream) - 1 - self.byPeriod *60 *24
                     logging.info('doing by period, using index/period(days): {}/{}'.format(startIndex, self.byPeriod))
-                for i in range(startIndex, startIndex+interval):
-                    sma += dataStream[i].close
-                sma = sma / interval
+                sma = data.calcSMA(interval, dataStream, startIndex)
                 ema = data.calcEMA(dataStream[startIndex+interval].close, sma, interval)
                 self.curEmaIndex = startIndex+interval
             else:
                 # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
-                tailOffset = len(dataStream) - 1 - interval - 2 # See note in data.SMA
-                sma = data.calcSMA(interval, dataStream, tailOffset)
-                logging.info('calculated sma of {} for {} at {}'.format(sma, interval, tailOffset))
+                smaStartIndex = len(dataStream) - interval*2
+                if interval == self.longInterval and smaStartIndex != 0:
+                    raise RuntimeError('wrong interval calc: {} {} {}'.format(smaStartIndex, len(dataStream), interval))
+                sma = data.calcSMA(interval, dataStream, smaStartIndex)
+                logging.info('calculated sma of {} for {} at {}'.format(sma, interval, smaStartIndex))
     
                 prevEMA = sma
                 ema = 0
-                index = len(dataStream) - 1 - interval - 1 # See note in data.SMA
-                for point in range(0, interval):
-                    curPrice = dataStream[index].close
-                    ema = data.calcEMA(curPrice, prevEMA, interval)
+                index = len(dataStream) - interval
+                for point in range(index, len(dataStream)):
+                    midpoint = dataStream[index].midpoint()
+                    ema = data.calcEMA(midpoint, prevEMA, interval)
                     prevEMA = ema
                     index += 1
             logging.info('calculated ema for {} as {}'.format(interval, ema))
