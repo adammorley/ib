@@ -7,8 +7,6 @@ profitTarget: 3
 stopTarget: 7
 dayOrder: false
 trail: false
-buyAON: true
-buyFOK: true
 byPrice: false
 bufferAmt: 30000
 qty: 1

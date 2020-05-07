@@ -72,17 +72,19 @@ portfolioCheck = now()
 # and add the es one as well.
 logging.warn('running trade loop for %s...', wc.symbol)
 while now() < startTime + datetime.timedelta(hours=20):
+    # FIXME: needs improvement, and also perhaps a "just opened" state as well.
+    # probably re-factor to date module
+    # also clarify when we do start doing stuff.
     if not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
         ibc.sleep(60 * conf.greyzone)
-
-    if not date.isMarketOpen( date.parseOpenHours(wc.details) ):
+    elif not date.isMarketOpen( date.parseOpenHours(wc.details) ):
         logging.warn('market closed, waiting to open')
         ibc.sleep(60 * 5)
     # when running overnight, the historical data stream once got "stuck" and the EMAs were not updating.
     # so if we've run for longer than an hour, just refect the historical data and the old one will
     # get garbage collected.
-    elif conf.detector == 'emaCrossover' and datetime.datetime.utcnow().astimezone(pytz.utc) > dataRefresh:
+    elif conf.detector == 'emaCrossover' and now() > dataRefresh:
         logging.warn('refreshing historical data to avoid stale data.')
         dataRefresh = datetime.datetime.utcnow().astimezone(pytz.utc) + datetime.timedelta(hours=1)
         ibc.cancelHistoricalData(dataStream)

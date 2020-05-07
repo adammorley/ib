@@ -1,4 +1,10 @@
 import logging
+import re
+
+def histDataStreamError(reqId, errorCode, errorString, contract):
+    re.compile('.*?API historical data query cancelled.*?')
+    if errorCode != 162 and not re.match(errorString):
+        logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(reqId, errorCode, errorString))
 
 # defaults to getting auto-updated midpoint (bid/ask middle) outside regular trading hours for > 200 minutes with 1 min segments
 # using utc timezones.  the final datapoint is the current minute, so len(histData)-2 is full last minute while -3 is prior window

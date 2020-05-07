@@ -23,6 +23,11 @@ def setupData(ibc, wc, conf, backtestArgs=None):
         dataStream = data.getTicker(wc, ibc)
     elif conf.detector == 'emaCrossover':
         dataStore = EMA(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
+
+        # disable wrapper logging to hide the API error for canceling the data every hour
+        logging.getLogger('ib_insync.wrapper').setLevel(logging.FATAL)
+        ibc.errorEvent += data.histDataStreamError
+
         useRth = False if conf.buyOutsideRth else True
         dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth, k=True)
         dataStore.calcInitEMAs(dataStream)

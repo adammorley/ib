@@ -102,10 +102,6 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.buyOrder.orderType = 'LMT'
     orders.buyOrder.lmtPrice = Round(orderDetails.buyPrice, orderDetails.wContract.priceIncrement)
     orders.buyOrder.tif = 'DAY'
-    if orderDetails.config.buyFOK:
-        orders.buyOrder.tif = 'FOK'
-    if orderDetails.config.buyAON:
-        orders.buyOrder.allOrNone = True
 
     profitPrice = calculateProfitPrice(orderDetails)
     orders.profitOrder = Order()
