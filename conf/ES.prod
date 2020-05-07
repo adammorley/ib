@@ -1,0 +1,23 @@
+---
+account: U4027822
+prod: true
+tradingMode: live
+symbol: ES
+localSymbol: ESM0
+percents: false
+profitTarget: 3
+stopTarget: 7
+dayOrder: false
+trail: false
+byPrice: false
+bufferAmt: 1000
+qty: 1
+openPositions: 1
+buyOutsideRth: false
+sellOutsideRth: false
+greyzone: 15
+detector: emaCrossover
+longEMA: 20
+shortEMA: 5
+watchCount: 5
+barSizeStr: '1 min'

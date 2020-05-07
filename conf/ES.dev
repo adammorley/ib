@@ -1,0 +1,23 @@
+---
+account: DU2101955
+prod: false
+tradingMode: paper
+symbol: ES
+localSymbol: ESM0
+percents: false
+profitTarget: 3
+stopTarget: 7
+dayOrder: false
+trail: false
+byPrice: false
+bufferAmt: 30000
+qty: 1
+openPositions: 3
+buyOutsideRth: false
+sellOutsideRth: false
+greyzone: 15
+detector: emaCrossover
+longEMA: 20
+shortEMA: 5
+watchCount: 5
+barSizeStr: '1 min'
