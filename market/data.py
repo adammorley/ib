@@ -75,7 +75,7 @@ def getTicker(wc, ibc):
 def calcSMA(interval, histData, startIndex):
     sma = 0
     for i in range(startIndex, startIndex+interval):
-        sma += histData[i].midpoint()
+        sma += histData[i].close
     return sma/interval
 
 # exponential moving average (higher weighting recent data)

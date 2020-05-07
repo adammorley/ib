@@ -34,7 +34,6 @@ def setupData(ibc, wc, conf, backtestArgs=None):
         useRth = False if conf.buyOutsideRth else True
         histData = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
         dataStore.calcInitEMAs(histData)
-        ibc.cancelHistoricalData(histData)
     else:
         raise RuntimeError('do not know what to do!')
     return dataStore, dataStream
@@ -140,7 +139,7 @@ class EMA:
                 self.curEmaIndex = startIndex+interval
             else:
                 # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
-                smaStartIndex = len(dataStream) - interval*2
+                smaStartIndex = len(dataStream) - interval*2 - 1
                 if interval == self.longInterval and smaStartIndex != 0:
                     raise RuntimeError('wrong interval calc: {} {} {}'.format(smaStartIndex, len(dataStream), interval))
                 sma = data.calcSMA(interval, dataStream, smaStartIndex)
@@ -150,7 +149,7 @@ class EMA:
                 ema = 0
                 index = len(dataStream) - interval
                 for point in range(index, len(dataStream)):
-                    midpoint = dataStream[index].midpoint()
+                    midpoint = dataStream[index].close
                     ema = data.calcEMA(midpoint, prevEMA, interval)
                     prevEMA = ema
                     index += 1
