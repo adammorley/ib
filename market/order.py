@@ -160,9 +160,9 @@ def adequateFunds(ibc, orderDetails, orders):
     if orderDetails.wContract.contract.secType == 'FUT':
         wio = whatIfOrder(orders.buyOrder)
         os = ibc.whatIfOrder(orderDetails.wContract.contract, wio)
-        if not os['initMarginAfter='] or not isinstance(os['initMarginAfter='], str):
+        if not os.initMarginAfter or not isinstance(os.initMarginAfter, str):
             raise RuntimeError('got back invalid format: {} {} {}'.format(os, orderDetails, order))
-        ima = float( os['initMarginAfter='] )
+        ima = float( os.initMarginAfter )
         lhs += ima
     if lhs < rhs:
         adequateFunds = True
