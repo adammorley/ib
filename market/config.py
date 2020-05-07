@@ -21,6 +21,7 @@ def overrideConfig(conf, profitTarget=None, stopTarget=None, shortEMA=None, long
 class Config:
     account: str = None
     prod: bool = False
+    tradingMode: str = None
     symbol: str = None
     localSymbol: str = None
     percents: bool
@@ -56,6 +57,7 @@ def ProcessConfig(conf, detectorOn=None):
 
     config.account = conf['account']
     config.prod = conf['prod']
+    config.tradingMode = conf['tradingMode']
     config.symbol = conf['symbol']
     config.localSymbol = conf['localSymbol']
     config.percents = conf['percents']

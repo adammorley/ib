@@ -20,6 +20,8 @@ def connect(conf=None, debug=None):
         n += 1
         try:
             if conf.prod:
+                if conf.tradingMode != 'live':
+                    raise RuntimeError('prod set but trading mode is not live')
                 ibc.connect(host="localhost", port=getPort(conf.prod), clientId=rand.Int(), timeout=3, readonly=False, account=conf.account)
             else:
                 ibc.connect(host="localhost", clientId=rand.Int(), account=conf.account)
