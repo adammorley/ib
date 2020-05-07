@@ -21,8 +21,8 @@ parser.add_argument('--go', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
-ibc = connect.connect(conf, debug)
 conf = config.getConfig(args.conf)
+ibc = connect.connect(conf, args.debug)
 
 wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 

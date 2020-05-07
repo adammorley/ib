@@ -189,17 +189,21 @@ class EMA:
         if not self.backTest and date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
             logging.warn('market just opened, waiting')
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+            logging.warn('state just changed to crossed, starting to watch')
             self.areWatching = True
             self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
+            logging.warn('state just changed to uncrossed, stopping watch')
             self.areWatching = False
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
+            logging.warn('watching, incrementing count')
             self.countOfCrossedIntervals += 1
         elif self.areWatching and midpoint < self.long:
+            logging.warn('midpoint fell below long ema, stopping watch')
             self.areWatching = False
         logging.info('after checks: %s', self)
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
-            logging.info('returning a buy {}'.format(self))
+            logging.warn('returning a buy {}'.format(self))
             return midpoint # buyPrice
