@@ -89,7 +89,6 @@ class EMA:
     sleepTime: int = None
     backTest: bool = None
     curEmaIndex: int = None
-    curIndex: int = None
     byPeriod: int = None # number of days of bars to examine during iterative backtest
 
     def __init__(self, barSizeStr, wContract, shortInterval=None, longInterval=None, watchCount=None):
@@ -187,10 +186,7 @@ class EMA:
             sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
         midpoint = self.recalcEMAs(dataStream)
-        if self.backTest:
-            self.curIndex = len(dataStream) - 1 # See note in data module for SMA
-            self.curIndex = self.curEmaIndex + 1
-            logging.info('current index/price: {}/{}'.format(self.curIndex, midpoint))
+        logging.info('current midpoint {}'.format(midpoint))
 
         logging.info('before checks: %s', self)
         if not self.backTest and date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):

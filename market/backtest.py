@@ -144,6 +144,7 @@ def backtest(wc, dataStream, dataStore, conf):
     if conf.detector == 'threeBarPattern':
         startIndex = 2
     elif conf.detector == 'emaCrossover':
+        # FIXME: might be a bug here
         # we just stored (at init) the last EMA calculated, eg we are examining curClosePriceIndex
         startIndex = dataStore.curEmaIndex + 1
 
