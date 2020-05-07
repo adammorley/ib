@@ -1,0 +1,16 @@
+---
+account: DU2101955
+symbol: VIS2
+localSymbol: VIS2
+percents: true
+profitPercent: 8
+stopPercent: 5
+dayOrder: true
+dayPercent: 5
+trail: true
+byPrice: false
+qty: 1
+bufferAmt: 30000
+openPositions: 1
+buyOutsideRth: false
+sellOutsideRth: true
