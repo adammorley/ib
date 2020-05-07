@@ -150,12 +150,26 @@ def CreateBracketOrder(orderDetails, account=None):
     return orders
 
 from market import account
-def validateFunds(ibc, orderDetails):
+def adequateFunds(ibc, orderDetails, orders):
+    adequateFunds = False
     qty = calculateQty(orderDetails)
-    af = account.availableFunds(ibc, orderDetails.config.account)
-    if orderDetails.buyPrice * qty > af + orderDetails.config.bufferAmt:
-        return False
-    return True
+    availableFunds = account.availableFunds(ibc, orderDetails.config.account)
+    lhs = orderDetails.buyPrice * qty
+    rhs = availableFunds - orderDetails.config.bufferAmt
+    os = None
+    if orderDetails.wContract.contract.secType == 'FUT':
+        wio = whatIfOrder(orders.buyOrder)
+        os = ibc.whatIfOrder(orderDetails.wContract.contract, wio)
+        if not os['initMarginAfter='] or not isinstance(os['initMarginAfter='], str):
+            raise RuntimeError('got back invalid format: {} {} {}'.format(os, orderDetails, order))
+        ima = float( os['initMarginAfter='] )
+        lhs += ima
+    if lhs < rhs:
+        adequateFunds = True
+        logging.warn('detected adequate funds: {} {} {}'.format(os, af, lhs))
+    else:
+        logging.warn('not enough funds: {} {} {}'.format(os, af, lhs))
+    return adequateFunds
 
 def whatIfOrder(order):
     wio = copy.deepcopy(order)

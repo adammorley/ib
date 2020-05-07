@@ -107,16 +107,17 @@ while now() < startTime + datetime.timedelta(hours=20):
         makeTrade = True
         positions = ibc.positions()
         ibc.sleep(0)
-        if not order.validateFunds(ibc, orderDetails):
-            logging.warn('not enough funds to place a trade.')
-            makeTrade = False
         for p in positions:
             if p.contract == wc.contract and isMaxQty(p, conf):
                 logging.warn('passing on trade as max positions already open')
                 makeTrade = False
 
+        orders = order.CreateBracketOrder(orderDetails, conf.account)
+        if not order.adequateFunds(ibc, orderDetails, orders):
+            logging.error('not enough funds to place a trade.')
+            makeTrade = False
+
         if makeTrade:
-            orders = order.CreateBracketOrder(orderDetails, conf.account)
             trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
             trade.CheckTradeExecution(trades, orderDetails)
             logging.debug(trades)

@@ -37,8 +37,8 @@ def setupData(ibc, wc, conf, backtestArgs=None):
 
 # get the next minute's bar
 def GetNextBar(ticker, sleepFunc):
-    numberOfTicksInBar = 240
-    sleepSecs = 0.250
+    numberOfTicksInBar = 60
+    sleepSecs = 1
     logging.debug('getting points every 250ms')
 
     bar = bars.Bar(ticker.marketPrice())

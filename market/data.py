@@ -2,9 +2,9 @@ import logging
 import re
 
 def histDataStreamError(reqId, errorCode, errorString, contract):
-    re.compile('.*?API historical data query cancelled.*?')
-    if errorCode != 162 and not re.match(errorString):
-        logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(reqId, errorCode, errorString))
+    r = re.compile('.*?API historical data query cancelled.*?')
+    if errorCode != 162 and not r.match(errorString):
+        logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(errorCode, reqId, errorString))
 
 # defaults to getting auto-updated midpoint (bid/ask middle) outside regular trading hours for > 200 minutes with 1 min segments
 # using utc timezones.  the final datapoint is the current minute, so len(histData)-2 is full last minute while -3 is prior window
@@ -43,8 +43,6 @@ def getMarketPrice(ticker):
 def getTick(wc, ibc):
     tick = ibc.reqMktData(contract=wc.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
     ibc.sleep(1)
-    ibc.cancelMktData(contract=c)
-    ibc.sleep(0)
     return tick
 
 def getTicker(wc, ibc):
