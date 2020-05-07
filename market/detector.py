@@ -139,11 +139,11 @@ class EMA:
                 self.curEmaIndex = startIndex+interval
             else:
                 # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
-                smaStartIndex = len(dataStream) - interval*2 - 1
+                smaStartIndex = len(dataStream)-1 - interval*2
                 if interval == self.longInterval and smaStartIndex != 0:
                     raise RuntimeError('wrong interval calc: {} {} {}'.format(smaStartIndex, len(dataStream), interval))
                 sma = data.calcSMA(interval, dataStream, smaStartIndex)
-                logging.info('calculated sma of {} for {} at {}'.format(sma, interval, smaStartIndex))
+                logging.info('calculated sma of {} for {} starting at {}'.format(sma, interval, smaStartIndex))
     
                 prevEMA = sma
                 ema = 0
