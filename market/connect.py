@@ -8,7 +8,7 @@ from market import rand
 def getPort(prod=False):
     return 4001 if prod else 4002
 
-def connect(account=None, debug=None, prod=False):
+def connect(conf=None, debug=None):
     util.logToConsole(logging.WARN)
     if debug:
         util.logToConsole(logging.DEBUG)
@@ -19,10 +19,10 @@ def connect(account=None, debug=None, prod=False):
     while not connected and n < 3:
         n += 1
         try:
-            if account is not None:
-                ibc.connect(host="localhost", port=getPort(prod), clientId=rand.Int(), timeout=3, readonly=False, account=account)
+            if conf.prod:
+                ibc.connect(host="localhost", port=getPort(conf.prod), clientId=rand.Int(), timeout=3, readonly=False, account=conf.account)
             else:
-                ibc.connect(host="localhost", port=getPort(prod), clientId=rand.Int())
+                ibc.connect(host="localhost", clientId=rand.Int(), account=conf.account)
             ibc.sleep(0.25)
             connected = ibc.isConnected()
         except:

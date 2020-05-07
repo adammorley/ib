@@ -14,20 +14,17 @@ from market import trade
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--symbol', type=str, required=True)
-parser.add_argument('--localSymbol', type=str, default=None)
 parser.add_argument('--conf', type=str, required=True)
 parser.add_argument('--limitPrice', type=float, default=-1.0)
 parser.add_argument('--bidIncrement', type=float, default=0.0)
 parser.add_argument('--go', action='store_true', default=None)
-parser.add_argument('--prod', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
-ibc = connect.connect(args.debug, args.prod)
+ibc = connect.connect(conf, debug)
 conf = config.getConfig(args.conf)
 
-wc = contract.wContract(ibc, args.symbol, args.localSymbol)
+wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 buyPrice = args.limitPrice
 if buyPrice < 0: # fetch from market

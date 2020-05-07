@@ -22,7 +22,6 @@ from market import trade
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--conf', type=str, required=True)
-parser.add_argument('--prod', action='store_true', default=None)
 parser.add_argument('--debug', action='store_true', default=None)
 parser.add_argument('--info', action='store_true', default=None)
 args = parser.parse_args()
@@ -55,8 +54,7 @@ def checkForHold(ibc, wc):
 
 startTime = now()
 
-conf = config.getConfig(args.conf, detectorOn=True)
-ibc = connect.connect(conf.account, args.debug, args.prod)
+ibc = connect.connect(conf, debug)
 if args.info:
     util.logToConsole(logging.INFO)
 account.summary(ibc, conf.account)

@@ -19,6 +19,8 @@ def overrideConfig(conf, profitTarget=None, stopTarget=None, shortEMA=None, long
     return conf
 
 class Config:
+    account: str = None
+    prod: bool = False
     symbol: str = None
     localSymbol: str = None
     percents: bool
@@ -53,6 +55,7 @@ def ProcessConfig(conf, detectorOn=None):
     config = Config()
 
     config.account = conf['account']
+    config.prod = conf['prod']
     config.symbol = conf['symbol']
     config.localSymbol = conf['localSymbol']
     config.percents = conf['percents']
