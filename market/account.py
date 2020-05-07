@@ -20,5 +20,8 @@ def summaryField(ibc, account, field, usd=None):
 def availableFunds(ibc, account):
     return float( summaryField(ibc, account, 'AvailableFunds', usd=True) )
 
+def buyingPower(ibc, account):
+    return float( summaryField(ibc, account, 'BuyingPower', usd=True) )
+
 def maintMargin(ibc, account):
     return summaryField(ibc, account, 'MaintMarginReq')

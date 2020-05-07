@@ -149,13 +149,23 @@ def CreateBracketOrder(orderDetails, account=None):
     logging.warn('created bracket orders: %s', orders)
     return orders
 
+# https://www.interactivebrokers.com/en/?f=%2Fen%2Fgeneral%2Feducation%2Fpdfnotes%2FWN-UnderstandingIBMargin.php%3Fib_entity%3Din
+#
+# Available Funds – (Equity with Loan Value less Initial margin) lets you know if funds are available to put on a new trade.
+# Excess Liquidity – (Equity with Loan Value less Maintenance margin) Lets you know if you are approaching liquidations
+# Buying Power – value of securities you can purchase without depositing additional funds. In cash accounts this is the settled
+# cash. In a margin account, buying power is increased through the use of leverage using cash and the value of held stock as collateral.
+# The amount of leverage depends upon whether you have a Reg. T Margin or Portfolio Margin account. Active traders can take advantage 
+# of reduced intraday margin for securities – generally 25% of the long stock value. But keep in mind this requirement reverts to the 
+# Reg T 50% of stock value to hold overnight.
 from market import account
 def adequateFunds(ibc, orderDetails, orders):
-    adequateFunds = False
     qty = calculateQty(orderDetails)
     availableFunds = account.availableFunds(ibc, orderDetails.config.account)
+    buyingPower = account.buyingPower(ibc, orderDetails.config.account)
     lhs = orderDetails.buyPrice * qty
-    rhs = availableFunds - orderDetails.config.bufferAmt
+    af_rhs = availableFunds - orderDetails.config.bufferAmt
+    bp_rhs = buyingPower - orderDetails.config.bufferAmt
     os = None
     if orderDetails.wContract.contract.secType == 'FUT':
         wio = whatIfOrder(orders.buyOrder)
@@ -164,12 +174,12 @@ def adequateFunds(ibc, orderDetails, orders):
             raise RuntimeError('got back invalid format: {} {} {}'.format(os, orderDetails, order))
         ima = float( os.initMarginAfter )
         lhs += ima
-    if lhs < rhs:
-        adequateFunds = True
-        logging.warn('detected adequate funds: {} {} {}'.format(os, af, lhs))
-    else:
-        logging.warn('not enough funds: {} {} {}'.format(os, af, lhs))
-    return adequateFunds
+    logging.warn('funds: {} {} {}'.format(lhs, af_rhs, bp_rhs))
+    if lhs < af_rhs and lhs < bp_rhs:
+        logging.warn('detected adequate funds')
+        return True
+    logging.error('not enough funds: {}'.format(os))
+    return False
 
 def whatIfOrder(order):
     wio = copy.deepcopy(order)
