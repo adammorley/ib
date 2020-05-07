@@ -136,6 +136,7 @@ class EMA:
                     startIndex = len(dataStream) - 1 - self.byPeriod *60 *24
                     logging.info('doing by period, using index/period(days): {}/{}'.format(startIndex, self.byPeriod))
                 sma = data.calcSMA(interval, dataStream, startIndex)
+                # FIXME: might be a bug here, because interval calculations
                 ema = data.calcEMA(dataStream[startIndex+interval].close, sma, interval)
                 self.curEmaIndex = startIndex+interval
             else:
@@ -162,15 +163,18 @@ class EMA:
         self.update(short, long_)
 
     def recalcEMAs(self, dataStream):
+        midpoint = None
         if self.backTest:
             self.curEmaIndex = self.curEmaIndex + 1
+            midpoint = dataStream[self.curEmaIndex].midpoint()
+            logging.info('recalculating emas at index {} using price of {}'.format(self.curEmaIndex, midpoint))
         else:
-            self.curEmaIndex = len(dataStream) - 2 # See note in data.SMA
-        curPrice = dataStream[self.curEmaIndex].close
-        logging.info('recalculating emas at index {} using last minutes price of {}'.format(self.curEmaIndex, curPrice))
-        short = data.calcEMA(curPrice, self.short, self.shortInterval)
-        long_ = data.calcEMA(curPrice, self.long, self.longInterval)
+            midpoint = dataStream.midpoint()
+            logging.info('recalculating emas using market midpoint of {}'.format(midpoint))
+        short = data.calcEMA(midpoint, self.short, self.shortInterval)
+        long_ = data.calcEMA(midpoint, self.long, self.longInterval)
         self.update(short, long_)
+        return midpoint
 
     # the rules for buying:
     #
@@ -182,12 +186,11 @@ class EMA:
         if not self.backTest:
             sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
-        self.recalcEMAs(dataStream)
-        self.curIndex = len(dataStream) - 1 # See note in data module for SMA
+        midpoint = self.recalcEMAs(dataStream)
         if self.backTest:
+            self.curIndex = len(dataStream) - 1 # See note in data module for SMA
             self.curIndex = self.curEmaIndex + 1
-        curClosePrice = dataStream[self.curIndex].close
-        logging.info('current index/price: {}/{}'.format(self.curIndex, curClosePrice))
+            logging.info('current index/price: {}/{}'.format(self.curIndex, midpoint))
 
         logging.info('before checks: %s', self)
         if not self.backTest and date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
@@ -199,11 +202,11 @@ class EMA:
             self.areWatching = False
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
-        elif self.areWatching and curClosePrice < self.long:
+        elif self.areWatching and midpoint < self.long:
             self.areWatching = False
         logging.info('after checks: %s', self)
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
             logging.info('returning a buy {}'.format(self))
-            return curClosePrice # buyPrice
+            return midpoint # buyPrice
