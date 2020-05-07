@@ -185,8 +185,6 @@ class EMA:
             sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
         midpoint = self.recalcEMAs(dataStream)
-        logging.info('current midpoint {}'.format(midpoint))
-
         logging.info('before checks: %s', self)
         if not self.backTest and date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
             logging.warn('market just opened, waiting')

@@ -5,8 +5,9 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     rHdmsQueryCanceled = 162 # re.compile('.*?API historical data query cancelled.*?')
     rMdfOk = 2104 # re.compile('.*?Market data farm connection is OK.*?')
     rHdmsOk = 2106 # re.compile('.*?HMDS data farm connection is OK.*?')
+    rHmdsDisconnectOk = 2107 # re.compile('.*?HMDS data farm connection is inactive but should be available upon demand.*?)
     rMdfC = 2119 # re.compile('.*?Market data farm is connecting.*?')
-    errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsOk, rMdfC)
+    errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsOk, rHmdsDisconnectOk, rMdfC)
     notFound = True
     for ec in errorCodes:
         if errorCode == ec:
