@@ -25,7 +25,7 @@ def setupData(ibc, wc, conf, backtestArgs=None):
         dataStore = EMA(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
 
         # disable wrapper logging to hide the API error for canceling the data every hour
-        logging.getLogger('ib_insync.wrapper').setLevel(logging.FATAL)
+        logging.getLogger('ib_insync.wrapper').setLevel(logging.CRITICAL)
         ibc.errorEvent += data.histDataStreamError
 
         useRth = False if conf.buyOutsideRth else True
