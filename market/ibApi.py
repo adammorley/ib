@@ -41,7 +41,7 @@ def startGateway(configFile):
         raise RuntimeError('prod is live')
     
     user, password = lookupUserPass()
-    controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, userid=user, password=password, ibcPath='/home/adam/ibc')
+    controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni='/home/adam/ibcCreds/config.ini', ibcPath='/home/adam/ibc')
     logging.warn('starting API gateway in {} mode as user {}'.format(conf.tradingMode, user))
     controller.start()
     asyncio.get_event_loop().run_forever()
