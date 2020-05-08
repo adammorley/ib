@@ -35,6 +35,7 @@ class Config:
     trail: bool
     qty: int
     openPositions: int
+    totalTrades: int
     buyOutsideRth: bool
     sellOutsideRth: bool
     greyzone: int # number of minutes before market close to not place new trades
@@ -84,6 +85,7 @@ def ProcessConfig(conf, detectorOn=None):
 
     config.trail = conf['trail']
     config.openPositions = conf['openPositions']
+    config.totalTrades = conf['totalTrades']
     config.buyOutsideRth = conf['buyOutsideRth']
     config.sellOutsideRth = conf['sellOutsideRth']
 

@@ -13,6 +13,7 @@ byPrice: false
 bufferAmt: 1000
 qty: 1
 openPositions: 1
+totalTrades: 1
 buyOutsideRth: false
 sellOutsideRth: false
 greyzone: 15

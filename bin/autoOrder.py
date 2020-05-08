@@ -62,12 +62,13 @@ wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 dataStore, dataStream = detector.setupData(ibc, wc, conf)
 
+totalTrades = 0
 checkForHold(ibc, wc)
 portfolioCheck = now()
 # what we really want is to extract the "I detected a reason to buy contract n at bar y with reuqirements z"
 # and add the es one as well.
 logging.warn('running trade loop for %s...', wc.symbol)
-while now() < startTime + datetime.timedelta(hours=20):
+while now() < startTime + datetime.timedelta(hours=20) and totalTrades < conf.totalTrades:
     # FIXME: is a "just opened" useful here, or is the one in EMA's check for buy ok?
     if not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
@@ -106,6 +107,7 @@ while now() < startTime + datetime.timedelta(hours=20):
         if makeTrade:
             trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
             trade.CheckTradeExecution(trades, orderDetails)
+            totalTrades += 1
             logging.debug(trades)
 
     if datetime.datetime.utcnow().astimezone(pytz.utc) > portfolioCheck + datetime.timedelta(minutes=30):
