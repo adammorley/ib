@@ -5,9 +5,7 @@ import logging
 import pytz
 import sys
 
-from ib_insync import *
-
-sys.path.append(r'.')
+sys.path.append(r'/home/adam/ibCur')
 from market import account
 from market import bars
 from market import config

@@ -26,6 +26,7 @@ def setupData(ibc, wc, conf, backtestArgs=None):
 
         # disable wrapper logging to hide the API error for canceling the data every hour
         logging.getLogger('ib_insync.wrapper').setLevel(logging.CRITICAL)
+        logging.warn('ignoring hdms broken errors')
         ibc.errorEvent += data.dataStreamErrorHandler
 
         dataStream = data.getTicker(wc, ibc)
@@ -196,7 +197,6 @@ class EMA:
             logging.warn('state just changed to uncrossed, stopping watch')
             self.areWatching = False
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
-            logging.warn('watching, incrementing count')
             self.countOfCrossedIntervals += 1
         elif self.areWatching and midpoint < self.long:
             logging.warn('midpoint fell below long ema, stopping watch')

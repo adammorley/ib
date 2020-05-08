@@ -40,3 +40,10 @@ def close(ibc, wc=None):
         ibc.sleep(0)
     ibc.disconnect()
     ibc.sleep(0)
+
+def ping():
+    ibc = IB()
+    ibc.connect("localhost", port=getPort(False), clientId=rand.Int())
+    ibc.disconnect()
+    ibc.connect("localhost", port=getPort(True), clientId=rand.Int())
+    ibc.disconnect()

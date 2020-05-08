@@ -10,7 +10,6 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     rHmdsDisconnectOk = 2107 # re.compile('.*?HMDS data farm connection is inactive but should be available upon demand.*?)
     rMdfC = 2119 # re.compile('.*?Market data farm is connecting.*?')
     errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsBroken, rHdmsOk, rHmdsDisconnectOk, rMdfC)
-    logging.warn('ignoring hdms broken errors')
     notFound = True
     for ec in errorCodes:
         if errorCode == ec:
