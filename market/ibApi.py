@@ -5,16 +5,6 @@ import yaml
 
 from ib_insync import ibcontroller
 
-def lookupUserPass():
-    d = '/home/adam/.ibCreds/'
-    u, p = d+'user', d+'pass'
-    user, pass_ = None, None
-    with open(u, 'r') as f:
-        user = f.readline().replace('\n', '')
-    with open(p, 'r') as f:
-        pass_ = f.readline().replace('\n', '')
-    return user, pass_
-
 class Config:
     account: str = None
     prod: bool = False
@@ -40,7 +30,6 @@ def startGateway(configFile):
     if conf.prod and conf.tradingMode != 'live':
         raise RuntimeError('prod is live')
     
-    user, password = lookupUserPass()
     controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni='/home/adam/ibcCreds/config.ini', ibcPath='/home/adam/ibc')
     logging.warn('starting API gateway in {} mode as user {}'.format(conf.tradingMode, user))
     controller.start()
