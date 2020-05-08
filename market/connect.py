@@ -43,7 +43,13 @@ def close(ibc, wc=None):
 
 def ping():
     ibc = IB()
-    ibc.connect("localhost", port=getPort(False), clientId=rand.Int())
-    ibc.disconnect()
-    ibc.connect("localhost", port=getPort(True), clientId=rand.Int())
-    ibc.disconnect()
+    try:
+        ibc.connect("localhost", port=getPort(False), clientId=rand.Int())
+        ibc.disconnect()
+    except ConnectionRefusedError:
+        logging.error('could not connect to non prod')
+    try:
+        ibc.connect("localhost", port=getPort(True), clientId=rand.Int())
+        ibc.disconnect()
+    except ConnectionRefusedError:
+        logging.error('could not connect to prod')
