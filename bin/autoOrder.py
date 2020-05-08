@@ -54,6 +54,7 @@ startTime = now()
 
 conf = config.getConfig(args.conf, detectorOn=True)
 ibc = connect.connect(conf, args.debug)
+from ib_insync import util
 if args.info:
     util.logToConsole(logging.INFO)
 account.summary(ibc, conf.account)
