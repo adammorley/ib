@@ -32,7 +32,10 @@ def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r
     if d is not None: # we're doing a backtest, so add the long interval to build the SMA
         d = d *60*24 + longInterval
     else:
-        d = 2 * longInterval
+        # add one because when market closed, latest bar is not yet ready (crazy but true)
+        # happens especially when there are two closes (like with the futures maintenace
+        # window)
+        d = 2 * longInterval +1
 
     durationStr = ''
     if d > 1440: # d is in minutes because barSizeToDuration supports minutes atm

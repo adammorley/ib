@@ -5,6 +5,7 @@ from ib_insync.contract import Contract
 from ib_insync.contract import ContractDetails
 from ib_insync.contract import Stock
 from ib_insync.ib import IB
+from ib_insync.objects import PnLSingle
 from ib_insync.objects import PriceIncrement
 
 # wrapper for ib's contract since things are spread out among the contract and its details
@@ -16,6 +17,7 @@ class wContract:
     marketRule: [PriceIncrement]
     priceIncrement: float
     ibClient: IB
+    pnl: PnLSingle
     def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
         self.localSymbol = localSymbol
@@ -92,6 +94,27 @@ class wContract:
             self.priceIncrement = 0.01
         else:
             self.priceIncrement = self.marketRule[0].increment
+
+    def updatePnl(self, account):
+        pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)
+        if len(pnlR) == 0:
+            return None
+        if len(pnlR) != 1:
+            raise RuntimeError('got back more than one pnl for security: {} {}'.format(pnlR, self.contract))
+        pnl = pnlR[0]
+        if pnl.account != account:
+            raise RuntimeError('got back mismatched accounts: {} {} {}'.format(pnl, account, self.contract))
+        elif pnl.conId != self.contract.conId:
+            raise RuntimeError('got back mismatched contract IDs: {} {} {}'.format(pnl, account, self.contract))
+        elif not pnl.dailyPnL or not pnl.unrealizedPnL or not pnl.realizedPnL:
+            raise RuntimeError('did not get back pnl: {} {} {}'.format(pnl, account, self.contract))
+        self.pnl = pnl
+
+    def realizedPnl(self, account):
+        self.updatePnl(account)
+        if self.pnl is None:
+            return None
+        return self.pnl.realizedPnL
 
     def validatePriceIncrement(self):
         if self.details.minTick != self.priceIncrement and len(self.marketRule) < 2:

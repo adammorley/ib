@@ -11,6 +11,7 @@ dayOrder: false
 trail: false
 byPrice: false
 bufferAmt: 30000
+maxLoss: 500
 qty: 1
 openPositions: 3
 totalTrades: 99999

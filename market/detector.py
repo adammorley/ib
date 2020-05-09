@@ -6,6 +6,20 @@ from market import bars
 from market import data
 from market import date
 
+# check whether the realized loss is bigger than the configured max loss amount.  if so
+# log a critical and exit
+#
+# max loss is actually qty * open positions * stop size * tick value + maxloss, eg this is a trigger, not a protection
+# FIXME: add dynamic handling on open orders (eg closing positions) and more betterer
+#        because at the moment, taking a dep on order execution system
+def lossTooHigh(wc, conf):
+    rpnl = wc.realizedPnl(conf.account)
+    if rpnl != rpnl: # NaN
+        return None
+    elif wc.realizedPnl(conf.account) < (-1*config.maxLoss):
+        return True
+    return False
+
 def setupData(ibc, wc, conf, backtestArgs=None):
     dataStore = None
     dataStream = None

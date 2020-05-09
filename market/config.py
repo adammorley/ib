@@ -42,6 +42,7 @@ class Config:
     byPrice: bool
     dollarAmt: float
     bufferAmt: float # used by order creation to keep money aside, untouched.
+    maxLoss: float # used to know when to stop
     detector: str
     barSizeStr: str
     longEMA: int
@@ -66,6 +67,7 @@ def ProcessConfig(conf, detectorOn=None):
     config.byPrice = conf['byPrice']
 
     config.bufferAmt = conf['bufferAmt']
+    config.maxLoss = conf['maxLoss']
 
     if config.byPrice:
         config.dollarAmt = conf['dollarAmt']
@@ -98,5 +100,5 @@ def ProcessConfig(conf, detectorOn=None):
             config.longEMA = conf['longEMA']
             config.watchCount = conf['watchCount']
 
-    logging.warn('config %s', conf)
+    logging.warn('config %s', config)
     return config
