@@ -97,24 +97,14 @@ class wContract:
 
     def updatePnl(self, account):
         pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)
-        if len(pnlR) == 0:
-            return None
         if len(pnlR) != 1:
-            raise RuntimeError('got back more than one pnl for security: {} {}'.format(pnlR, self.contract))
+            raise RuntimeError('should get back one pnl for security: {} {}'.format(pnlR, self.contract))
         pnl = pnlR[0]
         if pnl.account != account:
             raise RuntimeError('got back mismatched accounts: {} {} {}'.format(pnl, account, self.contract))
         elif pnl.conId != self.contract.conId:
             raise RuntimeError('got back mismatched contract IDs: {} {} {}'.format(pnl, account, self.contract))
-        elif not pnl.dailyPnL or not pnl.unrealizedPnL or not pnl.realizedPnL:
-            raise RuntimeError('did not get back pnl: {} {} {}'.format(pnl, account, self.contract))
         self.pnl = pnl
-
-    def realizedPnl(self, account):
-        self.updatePnl(account)
-        if self.pnl is None:
-            return None
-        return self.pnl.realizedPnL
 
     def validatePriceIncrement(self):
         if self.details.minTick != self.priceIncrement and len(self.marketRule) < 2:
