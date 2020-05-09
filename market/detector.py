@@ -9,6 +9,7 @@ from market import date
 # max loss is actually qty * open positions * stop size * tick value + maxloss, eg this is a trigger, not a protection
 # FIXME: add dynamic handling on open orders (eg closing positions) and more betterer
 #        because at the moment, taking a dep on order execution system
+# https://interactivebrokers.com/php/whiteLabel/TWS_Reference_Information/pnl_.htm
 def lossTooHigh(wc, conf):
     wc.updatePnl(conf.account)
     if wc.pnl.realizedPnL != wc.pnl.realizedPnL:
