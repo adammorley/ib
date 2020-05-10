@@ -93,18 +93,26 @@ while now() < startTime + datetime.timedelta(hours=20):
     elif not date.isMarketOpen( date.parseOpenHours(wc.details) ):
         logging.warn('market closed, waiting to open')
         ibc.sleep(60 * 5)
+        continue
+
     # FIXME: is a "just opened" useful here, or is the one in EMA's check for buy ok?
-    elif not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
+    buyOk = True
+    if not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
         ibc.sleep(60 * conf.greyzone)
+        buyOk = False
     elif date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=conf.greyzone) ):
         logging.warn('market just opened, waiting')
+        # FIXME: sleep greyzone from market open time
+        ibc.sleep(60 * conf.greyzone)
+        buyOk = False
 
     buyPrice = None
     if conf.detector == 'threeBarPattern':
         buyPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
     elif conf.detector == 'emaCrossover':
         buyPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
+    buyPrice = buyPrice if buyOk else None # allows for metadata updates while markets are trasitioning
 
     orderDetails = None
     if buyPrice is not None:

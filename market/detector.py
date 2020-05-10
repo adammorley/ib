@@ -13,7 +13,7 @@ def connectivityError(reqId, errorCode, errorString, contract):
     rConnectivityLost = 1100 # re.compile('.*?Connectivity between IB and Trader Workstation has been lost.*?')
     rConnectivityRestoredDataLost = 1101 # re.compile('.*?Connectivity between IB and TWS has been restored- data lost.*?')
     rMdfDisconnect = 2103 # re.compile('.*?Market data farm connection is inactive but should be available upon demand.*?')
-    errorCodes = (rConnectivityLost, rConnectivityRestoredDataLost, rMdfDisconnect)
+    errorCodes = [rConnectivityLost, rConnectivityRestoredDataLost, rMdfDisconnect]
     for ec in errorCodes:
         if errorCode == ec:
             logging.error('received an error which requires restart: {} {}'.format(errorCode, errorString))
@@ -23,9 +23,9 @@ def connectivityError(reqId, errorCode, errorString, contract):
             sys.exit(0)
 
     rConnectivityRestoredNoDataLoss = 1102 # re.compile('.*?Connectivity between IB and Trader Workstation has been restored - data maintained.*?')
-    infoCodes = (rConnectivityRestoredNoDataLoss)
+    infoCodes = [rConnectivityRestoredNoDataLoss]
     for ic in infoCodes:
-        if errorCode = ic:
+        if errorCode == ic:
             logging.warn('received an info: {} {}'.format(errorCode, errorString))
 
 # max loss is actually qty * open positions * stop size * tick value + maxloss, eg this is a trigger, not a protection
@@ -169,7 +169,7 @@ class EMA:
                 sma = 0
                 startIndex = 0
                 if self.byPeriod:
-                    startIndex = len(dataStream) - 1 - self.byPeriod *60 *24
+                    startIndex = len(dataStream)-1 - self.byPeriod *60 *24
                     logging.info('doing by period, using index/period(days): {}/{}'.format(startIndex, self.byPeriod))
                 sma = data.calcSMA(interval, dataStream, startIndex)
                 # FIXME: might be a bug here, because interval calculations
@@ -185,7 +185,7 @@ class EMA:
     
                 prevEMA = sma
                 ema = 0
-                index = len(dataStream) - interval
+                index = len(dataStream)-1 - interval
                 for point in range(index, len(dataStream)):
                     midpoint = dataStream[index].close
                     ema = data.calcEMA(midpoint, prevEMA, interval)
@@ -224,7 +224,9 @@ class EMA:
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+        if midpoint != midpoint:
+            logging.error('getting an NaN from midpoint call during open market conditions {} {}'.format(midpoint, self.wContract.contract))
+        elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             logging.warn('state just changed to crossed, starting to watch')
             self.areWatching = True
             self.countOfCrossedIntervals = 0
