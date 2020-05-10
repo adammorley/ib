@@ -11,7 +11,7 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     rMdfDisconnectOk = 2108 # re.compile('.*?Market data farm connection is inactive but should be available upon demand.*?')
     rRthIgnored = 2109 # re.compile('.*?Outside Regular Trading Hours.*?')
     rMdfC = 2119 # re.compile('.*?Market data farm is connecting.*?')
-    errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsBroken, rHdmsOk, rHmdsDisconnectOk, rMdfDisconnectOk, rRthIgnored, rMdfC)
+    errorCodes = [rHdmsQueryCanceled, rMdfOk, rHdmsBroken, rHdmsOk, rHmdsDisconnectOk, rMdfDisconnectOk, rRthIgnored, rMdfC]
     notFound = True
     for ec in errorCodes:
         if errorCode == ec:
