@@ -97,6 +97,8 @@ while now() < startTime + datetime.timedelta(hours=20):
     elif not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
         ibc.sleep(60 * conf.greyzone)
+    elif date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=conf.greyzone) ):
+        logging.warn('market just opened, waiting')
 
     buyPrice = None
     if conf.detector == 'threeBarPattern':

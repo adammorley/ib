@@ -11,4 +11,4 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--conf', type=str, required=True)
 args = parser.parse_args()
 
-ibApi.startGateway(args.conf)
+ibApi.startGatewayWatchdog(args.conf)

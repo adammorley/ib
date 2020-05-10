@@ -199,9 +199,7 @@ class EMA:
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if not self.backTest and date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=self.watchCount) ):
-            logging.warn('market just opened, waiting')
-        elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+        if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             logging.warn('state just changed to crossed, starting to watch')
             self.areWatching = True
             self.countOfCrossedIntervals = 0

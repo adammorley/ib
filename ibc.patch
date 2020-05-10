@@ -1,0 +1,13 @@
+--- ibcontroller.py.orig	2020-05-10 00:20:48.079489574 +0000
++++ ibcontroller.py	2020-05-10 00:12:26.948106153 +0000
+@@ -158,6 +158,10 @@
+         self._proc = await asyncio.create_subprocess_exec(
+             *cmd, stdout=asyncio.subprocess.PIPE)
+         self._monitor = asyncio.ensure_future(self.monitorAsync())
++        import signal
++        def termChild():
++            self._proc.send_signal(signal.SIGTERM)
++        asyncio.get_event_loop().add_signal_handler(signal.SIGINT, termChild)
+ 
+     async def terminateAsync(self):
+         if not self._proc:
