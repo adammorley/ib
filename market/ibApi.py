@@ -32,6 +32,8 @@ def getPort(prod=False):
 def onConnected():
     logging.warn('watchdog ib client connected')
     
+# note that the watchdog and signal handling here requires a pause between signals
+# sudo svc -i service/controller; sleep 1; sudoc -d service/controller
 def startGatewayWatchdog(configFile):
     conf = getConfig(configFile)
     logging.warn('config: {}'.format(conf))
@@ -44,15 +46,4 @@ def startGatewayWatchdog(configFile):
     ib.connectedEvent += onConnected
     watchdog = ibcontroller.Watchdog(controller=controller, ib=ib, host='localhost', port=getPort(conf.prod), appStartupTime=35)
     watchdog.start()
-
-#    ib.sleep(30)
-#    global pid
-#    pid = watchdog.controller._proc.pid
-#    def termChild():
-#        import os
-#        import signal
-#        if pid is not None:
-#            os.kill(pid, signal.SIGTERM)
-#    atexit.register(termChild)
-
     ib.run()
