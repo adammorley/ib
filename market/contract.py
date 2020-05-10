@@ -83,7 +83,7 @@ class wContract:
     def marketPrice(self):
         tick = self.getTick()
         mp = tick.marketPrice()
-        if mp != mp:
+        if math.isnan(mp):
             raise FloatingPointError('got floating point which is NaN: {} {}'.format(tick, self.symbol))
         return mp
 

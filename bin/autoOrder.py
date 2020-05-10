@@ -119,7 +119,7 @@ while now() < startTime + datetime.timedelta(hours=20):
         try:
             orderDetails = order.OrderDetails(buyPrice, conf, wc)
         except FloatingPointError as e:
-            logging.debug('got a NaN %s', e)
+            logging.debug('got an NaN %s', e)
 
     if orderDetails is not None:
         makeTrade = True

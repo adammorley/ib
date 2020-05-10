@@ -1,6 +1,7 @@
 # functions to detect changes which indicate a buy point for various securities
 import datetime
 import logging
+import math
 import sys
 import time
 
@@ -207,6 +208,11 @@ class EMA:
         else:
             midpoint = dataStream.midpoint()
             logging.info('recalculating emas using market midpoint of {}'.format(midpoint))
+
+        if math.isnan(midpoint):
+            logging.critical('getting an NaN from midpoint call during open market conditions {} {}'.format(midpoint, self.wContract.contract))
+            raise RuntimeError('do not know how to handle a lack of bid/ask during open market conditions.')
+
         short = data.calcEMA(midpoint, self.short, self.shortInterval)
         long_ = data.calcEMA(midpoint, self.long, self.longInterval)
         self.update(short, long_)
@@ -224,9 +230,7 @@ class EMA:
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if midpoint != midpoint:
-            logging.error('getting an NaN from midpoint call during open market conditions {} {}'.format(midpoint, self.wContract.contract))
-        elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+        if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             logging.warn('state just changed to crossed, starting to watch')
             self.areWatching = True
             self.countOfCrossedIntervals = 0
