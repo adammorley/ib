@@ -7,9 +7,11 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     # ok to ignore because no steady state connections
     rHdmsBroken = 2105 # re.compile('.*?HMDS data farm connection is broken.*?)
     rHdmsOk = 2106 # re.compile('.*?HMDS data farm connection is OK.*?')
-    rHmdsDisconnectOk = 2107 # re.compile('.*?HMDS data farm connection is inactive but should be available upon demand.*?)
+    rHmdsDisconnectOk = 2107 # re.compile('.*?HMDS data farm connection is inactive but should be available upon demand.*?')
+    rMdfDisconnectOk = 2108 # re.compile('.*?Market data farm connection is inactive but should be available upon demand.*?')
+    rRthIgnored = 2109 # re.compile('.*?Outside Regular Trading Hours.*?')
     rMdfC = 2119 # re.compile('.*?Market data farm is connecting.*?')
-    errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsBroken, rHdmsOk, rHmdsDisconnectOk, rMdfC)
+    errorCodes = (rHdmsQueryCanceled, rMdfOk, rHdmsBroken, rHdmsOk, rHmdsDisconnectOk, rMdfDisconnectOk, rRthIgnored, rMdfC)
     notFound = True
     for ec in errorCodes:
         if errorCode == ec:

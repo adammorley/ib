@@ -1,10 +1,25 @@
 # functions to detect changes which indicate a buy point for various securities
 import datetime
 import logging
+import sys
+import time
 
 from market import bars
 from market import data
 from market import date
+
+def connectivityError(reqId, errorCode, errorString, contract):
+    rConnectivityLost = 1100 # re.compile('.*?Connectivity between IB and Trader Workstation has been lost.*?')
+    rConnectivityRestoredDataLost = 1101 # re.compile('.*?Connectivity between IB and TWS has been restored- data lost.*?')
+    rMdfDisconnect = 2103 # re.compile('.*?Market data farm connection is inactive but should be available upon demand.*?')
+    errorCodes = (rConnectivityLost, rConnectivityRestoredDataLost, rMdfDisconnect)
+    for ec in errorCodes:
+        if errorCode == ec:
+            logging.error('received an error which requires restart: {} {}'.format(errorCode, errorString))
+            if ec == rConnectivityLost:
+                logging.warn('received 1100 error, waiting a minute before restart')
+                time.sleep(60)
+            sys.exit(0)
 
 # max loss is actually qty * open positions * stop size * tick value + maxloss, eg this is a trigger, not a protection
 # FIXME: add dynamic handling on open orders (eg closing positions) and more betterer
@@ -40,6 +55,9 @@ def setupData(ibc, wc, conf, backtestArgs=None):
         logging.getLogger('ib_insync.wrapper').setLevel(logging.CRITICAL)
         logging.warn('ignoring hdms broken errors')
         ibc.errorEvent += data.dataStreamErrorHandler
+
+        #logging.warn('installing auto restart handler.')
+        #ibc.errorEvent += connectivityError
 
         dataStream = data.getTicker(wc, ibc)
         ibc.sleep(0)
