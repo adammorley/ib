@@ -1,5 +1,4 @@
 import asyncio
-import atexit
 import logging
 import socket
 import yaml
@@ -33,17 +32,28 @@ def onConnected():
     logging.warn('watchdog ib client connected')
     
 # note that the watchdog and signal handling here requires a pause between signals
-# sudo svc -i service/controller; sleep 1; sudoc -d service/controller
 def startGatewayWatchdog(configFile):
     conf = getConfig(configFile)
     logging.warn('config: {}'.format(conf))
     if conf.prod and conf.tradingMode != 'live':
         raise RuntimeError('prod is live')
-    
+
     controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni='/home/adam/ibcCreds/config.ini', ibcPath='/home/adam/ibc')
     logging.warn('starting API gateway using watchdog in {} mode'.format(conf.tradingMode))
     ib = IB()
     ib.connectedEvent += onConnected
     watchdog = ibcontroller.Watchdog(controller=controller, ib=ib, host='localhost', port=getPort(conf.prod), appStartupTime=35)
     watchdog.start()
+
+    import signal
+    import sys
+    import time
+    def term(*args):
+        logging.warn('shutting down controller')
+        watchdog.controller._proc.send_signal(signal.SIGTERM)
+        time.sleep(1)
+        logging.warn('shutting down watchdog')
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, term)
+
     ib.run()
