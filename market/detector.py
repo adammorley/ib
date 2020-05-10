@@ -8,6 +8,7 @@ from market import bars
 from market import data
 from market import date
 
+# https://github.com/adammorley/ib/issues/7
 def connectivityError(reqId, errorCode, errorString, contract):
     rConnectivityLost = 1100 # re.compile('.*?Connectivity between IB and Trader Workstation has been lost.*?')
     rConnectivityRestoredDataLost = 1101 # re.compile('.*?Connectivity between IB and TWS has been restored- data lost.*?')
@@ -16,7 +17,7 @@ def connectivityError(reqId, errorCode, errorString, contract):
     for ec in errorCodes:
         if errorCode == ec:
             logging.error('received an error which requires restart: {} {}'.format(errorCode, errorString))
-            if ec == rConnectivityLost:
+            if errorCode == rConnectivityLost:
                 logging.warn('received 1100 error, waiting a minute before restart')
                 time.sleep(60)
             sys.exit(0)
