@@ -22,6 +22,12 @@ def connectivityError(reqId, errorCode, errorString, contract):
                 time.sleep(60)
             sys.exit(0)
 
+    rConnectivityRestoredNoDataLoss = 1102 # re.compile('.*?Connectivity between IB and Trader Workstation has been restored - data maintained.*?')
+    infoCodes = (rConnectivityRestoredNoDataLoss)
+    for ic in infoCodes:
+        if errorCode = ic:
+            logging.warn('received an info: {} {}'.format(errorCode, errorString))
+
 # max loss is actually qty * open positions * stop size * tick value + maxloss, eg this is a trigger, not a protection
 # FIXME: add dynamic handling on open orders (eg closing positions) and more betterer
 #        because at the moment, taking a dep on order execution system
@@ -34,7 +40,7 @@ def lossTooHigh(wc, conf):
         return True
     return False
 
-def setupData(ibc, wc, conf, backtestArgs=None):
+def setupData(wc, conf, backtestArgs=None):
     dataStore = None
     dataStream = None
     if backtestArgs is not None:
@@ -44,27 +50,27 @@ def setupData(ibc, wc, conf, backtestArgs=None):
             dataStore = EMA(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
             dataStore.backTest = True
             logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
-        dataStream = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
+        dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
         if conf.detector == 'emaCrossover':
             dataStore.calcInitEMAs(dataStream)
     elif conf.detector == 'threeBarPattern':
-        dataStream = data.getTicker(wc, ibc)
+        dataStream = wc.getTicker()
     elif conf.detector == 'emaCrossover':
         dataStore = EMA(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
 
         # disable wrapper logging to hide the API error for canceling the data every hour
         logging.getLogger('ib_insync.wrapper').setLevel(logging.CRITICAL)
         logging.warn('ignoring hdms broken errors')
-        ibc.errorEvent += data.dataStreamErrorHandler
+        wc.ibClient.errorEvent += data.dataStreamErrorHandler
 
-        #logging.warn('installing auto restart handler.')
-        #ibc.errorEvent += connectivityError
+        logging.warn('installing auto restart handler.')
+        wc.ibClient.errorEvent += connectivityError
 
-        dataStream = data.getTicker(wc, ibc)
-        ibc.sleep(0)
+        dataStream = wc.getTicker()
+        wc.ibClient.sleep(0)
 
         useRth = False if conf.buyOutsideRth else True
-        histData = data.getHistData(wc, ibc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
+        histData = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
         dataStore.calcInitEMAs(histData)
     else:
         raise RuntimeError('do not know what to do!')

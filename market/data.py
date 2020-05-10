@@ -26,7 +26,7 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
 # duration (d) is specified in number of barSizes via lookupDuration
 # FIXME: this kind of sucks
 barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
-def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=False):
+def getHistData(wc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=False):
     duration = barSizeToDuration[barSizeStr]
     if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
         raise RuntimeError('using seconds is supported')
@@ -47,24 +47,8 @@ def getHistData(wc, ibc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r
         durationStr = str(d *duration['value']) + ' ' + duration['unit']
 
     logging.info('getting historical data for c:{}/{}, e:{}, d:{}, b:{}, w:{}, u:{}, f:{}, k:{}'.format(wc.symbol, wc.localSymbol, e, durationStr, barSizeStr, t, r, f, k))
-    histData = ibc.reqHistoricalData(contract=wc.contract, endDateTime=e, durationStr=durationStr, barSizeSetting=barSizeStr, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)
+    histData = wc.ibClient.reqHistoricalData(contract=wc.contract, endDateTime=e, durationStr=durationStr, barSizeSetting=barSizeStr, whatToShow=t, useRTH=r, formatDate=f, keepUpToDate=k)
     return histData
-
-def getMarketPrice(ticker):
-    mp = ticker.marketPrice()
-    if mp != mp:
-        raise FloatingPointError('got floating point which is NaN')
-    return mp
-
-def getTick(wc, ibc):
-    tick = ibc.reqMktData(contract=wc.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
-    ibc.sleep(1)
-    return tick
-
-def getTicker(wc, ibc):
-    ticker = ibc.reqMktData(contract=wc.contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
-    ibc.sleep(0)
-    return ticker
 
 # histData is from getHistData
 # so you can feed like 200 units of histData and get the 50 period sma by passing n = 50

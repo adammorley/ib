@@ -78,7 +78,7 @@ account.summary(ibc, conf.account)
 wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 ibc.reqPnLSingle(account=conf.account, modelCode='', conId=wc.contract.conId) # request updates
 
-dataStore, dataStream = detector.setupData(ibc, wc, conf)
+dataStore, dataStream = detector.setupData(wc, conf)
 
 totalTrades = 0
 outputIfHolding(wc)

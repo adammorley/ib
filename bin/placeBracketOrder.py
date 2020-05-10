@@ -28,7 +28,7 @@ wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 buyPrice = args.limitPrice
 if buyPrice < 0: # fetch from market
-    buyPrice = args.bidIncrement + data.getMarketPrice(data.getTick(wc, ibc))
+    buyPrice = args.bidIncrement + wc.getTick.marketPrice()
 
 from market.order import OrderDetails
 orderDetails = OrderDetails(buyPrice, conf, wc)

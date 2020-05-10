@@ -59,6 +59,16 @@ class wContract:
             else:
                 self.localSymbol = self.contract.localSymbol
 
+    def getTick(self):
+        tick = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
+        self.ibClient.sleep(1)
+        return tick
+
+    def getTicker(self):
+        ticker = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
+        self.ibClient.sleep(1)
+        return ticker
+
     def ibDetails(self):
         r = self.ibClient.reqContractDetails(self.contract)
         if len(r) != 1 or r[0].contract != self.contract:
@@ -69,6 +79,13 @@ class wContract:
     def handleGlobexTimeZone(self):
         if self.contract.exchange == 'GLOBEX' and self.details.timeZoneId == 'America/Belize': # CME/GLOBEX is in chicago not belize.
             self.details.timeZoneId = 'America/Chicago'
+
+    def marketPrice(self):
+        tick = self.getTick()
+        mp = tick.marketPrice()
+        if mp != mp:
+            raise FloatingPointError('got floating point which is NaN: {} {}'.format(tick, self.symbol))
+        return mp
 
     def marketRule(self):
         if not isinstance(self.details.marketRuleIds, str):
