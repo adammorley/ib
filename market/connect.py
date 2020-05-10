@@ -47,7 +47,7 @@ def ping():
         ibc.connect("localhost", port=getPort(False), clientId=rand.Int())
         ibc.disconnect()
     except ConnectionRefusedError:
-        logging.error('could not connect to non prod')
+        logging.error('could not connect to dev/paper')
     try:
         ibc.connect("localhost", port=getPort(True), clientId=rand.Int())
         ibc.disconnect()

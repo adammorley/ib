@@ -101,7 +101,7 @@ while now() < startTime + datetime.timedelta(hours=20):
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
         ibc.sleep(60 * conf.greyzone)
         buyOk = False
-    elif date.marketOpenedLessThan( date.parseOpenHours(self.wContract.details), datetime.timedelta(minutes=conf.greyzone) ):
+    elif date.marketOpenedLessThan( date.parseOpenHours(wc.details), datetime.timedelta(minutes=conf.greyzone) ):
         logging.warn('market just opened, waiting')
         # FIXME: sleep greyzone from market open time
         ibc.sleep(60 * conf.greyzone)
@@ -119,22 +119,23 @@ while now() < startTime + datetime.timedelta(hours=20):
         try:
             orderDetails = order.OrderDetails(buyPrice, conf, wc)
         except FloatingPointError as e:
-            logging.debug('got an NaN %s', e)
+            logging.error('got an NaN during order creation: {} {} {}'.format(e, buyPrice, orderDetails))
+            orderDetails = None
 
     if orderDetails is not None:
         makeTrade = True
         p = getPosition(wc)
-        if p.contract == wc.contract and isMaxQty(p, conf):
+        if p is not None and p.contract == wc.contract and isMaxQty(p, conf):
             logging.warn('passing on trade as max positions already open')
             makeTrade = False
 
         orders = order.CreateBracketOrder(orderDetails, conf.account)
-        if not order.adequateFunds(ibc, orderDetails, orders):
+        if not order.adequateFunds(orderDetails, orders):
             logging.error('not enough funds to place a trade.')
             makeTrade = False
 
         if makeTrade:
-            trades = trade.PlaceBracketTrade(orders, orderDetails, ibc)
+            trades = trade.PlaceBracketTrade(orders, orderDetails)
             trade.CheckTradeExecution(trades, orderDetails)
             totalTrades += 1
             logging.debug(trades)

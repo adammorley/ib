@@ -17,7 +17,7 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
         if errorCode == ec:
             notFound = False
     if notFound:
-        logging.error('wrapper ERROR, Error {}, reqId {}: {}'.format(errorCode, reqId, errorString))
+        logging.error('wrapper, Error {}, reqId {}: {}'.format(errorCode, reqId, errorString))
 
 # defaults to getting auto-updated midpoint (bid/ask middle) outside regular trading hours for > 200 minutes with 1 min segments
 # using utc timezones.  the final datapoint is the current minute, so len(histData)-2 is full last minute while -3 is prior window

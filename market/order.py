@@ -159,17 +159,17 @@ def CreateBracketOrder(orderDetails, account=None):
 # of reduced intraday margin for securities – generally 25% of the long stock value. But keep in mind this requirement reverts to the 
 # Reg T 50% of stock value to hold overnight.
 from market import account
-def adequateFunds(ibc, orderDetails, orders):
+def adequateFunds(orderDetails, orders):
     qty = calculateQty(orderDetails)
-    availableFunds = account.availableFunds(ibc, orderDetails.config.account)
-    buyingPower = account.buyingPower(ibc, orderDetails.config.account)
+    availableFunds = account.availableFunds(orderDetails.wContract.ibClient, orderDetails.config.account)
+    buyingPower = account.buyingPower(orderDetails.wContract.ibClient, orderDetails.config.account)
     lhs = orderDetails.buyPrice * qty
     af_rhs = availableFunds - orderDetails.config.bufferAmt
     bp_rhs = buyingPower - orderDetails.config.bufferAmt
     os = None
     if orderDetails.wContract.contract.secType == 'FUT':
         wio = whatIfOrder(orders.buyOrder)
-        os = ibc.whatIfOrder(orderDetails.wContract.contract, wio)
+        os = orderDetails.wContract.ibClient.whatIfOrder(orderDetails.wContract.contract, wio)
         if not os.initMarginAfter or not isinstance(os.initMarginAfter, str):
             raise RuntimeError('got back invalid format: {} {} {}'.format(os, orderDetails, order))
         ima = float( os.initMarginAfter )
@@ -178,7 +178,7 @@ def adequateFunds(ibc, orderDetails, orders):
     if lhs < af_rhs and lhs < bp_rhs:
         logging.warn('detected adequate funds')
         return True
-    logging.error('not enough funds: {}'.format(os))
+    logging.error('not enough funds: {} {} {}'.format(os, orderDetails, orders))
     return False
 
 def whatIfOrder(order):

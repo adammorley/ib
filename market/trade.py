@@ -5,12 +5,12 @@ from ib_insync.order import OrderStatus
 
 from market import rand
 
-def PlaceBracketTrade(orders, orderDetails, ibc):
+def PlaceBracketTrade(orders, orderDetails):
     #oca=[]
-    orders.buyOrder.orderId = ibc.client.getReqId()
+    orders.buyOrder.orderId = orderDetails.wContract.ibClient.client.getReqId()
     for orderType, order in orders.__dict__.items():
         if orderType != 'buyOrder':
-            order.orderId = ibc.client.getReqId()
+            order.orderId = orderDetails.wContract.ibClient.client.getReqId()
             order.parentId = orders.buyOrder.orderId
             #oca.append(order)
 
@@ -20,20 +20,20 @@ def PlaceBracketTrade(orders, orderDetails, ibc):
     trades = []
     bos = None
     for orderType, order in orders.__dict__.items():
-        t = ibc.placeOrder(orderDetails.wContract.contract, order)
+        t = orderDetails.wContract.ibClient.placeOrder(orderDetails.wContract.contract, order)
         if orderType == 'buyOrder':
             bos = t.orderStatus
         trades.append(t)
-    ibc.sleep(0)
+    orderDetails.wContract.ibClient.sleep(0)
 
     n = 0
     while n < 3 and bos.status != OrderStatus.Filled:
         n += 1
-        ibc.sleep(1)
+        orderDetails.wContract.ibClient.sleep(1)
         if n > 1:
             logging.debug('waiting on an order fill')
 
-    ibc.sleep(0)
+    orderDetails.wContract.ibClient.sleep(0)
 
     stop = None
     if orderDetails.config.trail:
