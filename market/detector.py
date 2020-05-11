@@ -8,6 +8,7 @@ import time
 from market import bars
 from market import data
 from market import date
+from market import fatal
 
 # https://github.com/adammorley/ib/issues/7
 def connectivityError(reqId, errorCode, errorString, contract):

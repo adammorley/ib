@@ -5,6 +5,8 @@ import re
 
 from datetimerange import DateTimeRange # https://pypi.org/project/DateTimeRange/
 
+from market import fatal
+
 # returns datetimerange of open hours for next month or so
 def parseOpenHours(cd):
     return parseTradingHours(cd.tradingHours, parseTimezone(cd.timeZoneId) )

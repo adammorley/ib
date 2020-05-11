@@ -8,7 +8,7 @@ import time
 
 from market import config
 
-services = config.serviceDir()
+services = config.serviceDirs()
 autoOrder_ES = services+'autoOrder_ES'
 controller = services+'controller'
 allServiceDirs = [autoOrder_ES, controller]
