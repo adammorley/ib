@@ -17,6 +17,7 @@ from market import connect
 from market import contract
 from market import data
 from market import detector
+from market import fatal
 from market import order
 from market import rand 
 
@@ -69,7 +70,7 @@ if conf.detector == 'threeBarPattern':
     b = len(dataStream)
     dataStream = backtest.anotateBars(dataStream)
     if len(dataStream) != b:
-        raise RuntimeError('these should match.')
+        fatal.errorAndExit('these should match.')
     dataStore.first = backtest.getNextBar(dataStream, 0)
     dataStore.second = backtest.getNextBar(dataStream, 1)
 

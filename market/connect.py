@@ -3,6 +3,7 @@ import sys
 
 from ib_insync import *
 
+from market import fatal
 from market import rand
 
 def getPort(prod=False):
@@ -21,7 +22,7 @@ def connect(conf=None, debug=None):
         try:
             if conf.prod:
                 if conf.tradingMode != 'live':
-                    raise RuntimeError('prod set but trading mode is not live')
+                    fatal.fatal(conf, 'prod set but trading mode is not live')
                 ibc.connect(host="localhost", port=getPort(conf.prod), clientId=rand.Int(), timeout=3, readonly=False, account=conf.account)
             else:
                 ibc.connect(host="localhost", port=getPort(conf.prod), clientId=rand.Int(), account=conf.account)
@@ -31,7 +32,7 @@ def connect(conf=None, debug=None):
             pass
 
     if not connected:
-        raise RuntimeError('could not connect')
+        fatal.errorAndExit('could not connect')
     return ibc
 
 def close(ibc, wc=None):

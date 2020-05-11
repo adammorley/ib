@@ -8,6 +8,8 @@ from ib_insync.ib import IB
 from ib_insync.objects import PnLSingle
 from ib_insync.objects import PriceIncrement
 
+from market import fatal
+
 # wrapper for ib's contract since things are spread out among the contract and its details
 class wContract:
     contract: Contract
@@ -46,16 +48,16 @@ class wContract:
         elif (self.symbol == 'ES' or self.symbol == 'NQ') and self.localSymbol != None:
             c = Contract(secType='FUT', symbol=self.symbol, localSymbol=self.localSymbol, exchange='GLOBEX', currency='USD')
         else:
-            raise RuntimeError('no security specified')
+            fatal.errorAndExit('no security specified')
         self.contract = c
 
     def qualify(self):
         r = self.ibClient.qualifyContracts(self.contract)
         if len(r) != 1 or r[0].symbol != self.symbol:
-            raise LookupError('could not validate response: %s', r[0])
+            fatal.errorAndExit('could not validate response: %s', r[0])
         if self.localSymbol == None: # sometimes the local symbol isn't passed in (like with stocks)
             if self.contract.localSymbol == None:
-                raise LookupError('problem with looking up contract')
+                fatal.errorAndExit('problem with looking up contract')
             else:
                 self.localSymbol = self.contract.localSymbol
 
@@ -72,7 +74,7 @@ class wContract:
     def ibDetails(self):
         r = self.ibClient.reqContractDetails(self.contract)
         if len(r) != 1 or r[0].contract != self.contract:
-            raise LookupError('problem getting contract details: %s', r)
+            fatal.errorAndExit('problem getting contract details: %s', r)
         self.details = r[0]
         self.handleGlobexTimeZone()
 
@@ -89,15 +91,15 @@ class wContract:
 
     def marketRule(self):
         if not isinstance(self.details.marketRuleIds, str):
-            raise RuntimeError('wrong format {}'.format(self.details))
+            fatal.errorAndExit('wrong format {}'.format(self.details))
         mrStr = self.details.marketRuleIds
         mrs = mrStr.split(',')
         if len(mrs) < 1:
-            raise RuntimeError('wrong format {}'.format(self.details))
+            fatal.errorAndExit('wrong format {}'.format(self.details))
         r0 = mrs[0]
         for r in mrs:
             if r != r0:
-                raise RuntimeError('multiple market rules for a single contract {}'.format(self.details))
+                fatal.errorAndExit('multiple market rules for a single contract {}'.format(self.details))
         mr = self.ibClient.reqMarketRule(r0)
         self.marketRule = mr
         penny = False
@@ -106,7 +108,7 @@ class wContract:
                 if r.increment == 0.01:
                     penny = True
             if not penny:
-                raise RuntimeError('multiple price incmrenets {} {}'.format(self.details, self.marketRule))
+                fatal.errorAndExit('multiple price incmrenets {} {}'.format(self.details, self.marketRule))
             logging.warn('default to a penny for the increment, multiple price increments found {} {}'.format(self.marketRule, self.symbol))
             self.priceIncrement = 0.01
         else:
@@ -115,14 +117,14 @@ class wContract:
     def updatePnl(self, account):
         pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)
         if len(pnlR) != 1:
-            raise RuntimeError('should get back one pnl for security: {} {}'.format(pnlR, self.contract))
+            fatal.errorAndExit('should get back one pnl for security: {} {}'.format(pnlR, self.contract))
         pnl = pnlR[0]
         if pnl.account != account:
-            raise RuntimeError('got back mismatched accounts: {} {} {}'.format(pnl, account, self.contract))
+            fatal.errorAndExit('got back mismatched accounts: {} {} {}'.format(pnl, account, self.contract))
         elif pnl.conId != self.contract.conId:
-            raise RuntimeError('got back mismatched contract IDs: {} {} {}'.format(pnl, account, self.contract))
+            fatal.errorAndExit('got back mismatched contract IDs: {} {} {}'.format(pnl, account, self.contract))
         self.pnl = pnl
 
     def validatePriceIncrement(self):
         if self.details.minTick != self.priceIncrement and len(self.marketRule) < 2:
-            raise RuntimeError('ticks dont match: {} {}'.format(self.details.minTick, self.priceIncrement))
+            fatal.errorAndExit('ticks dont match: {} {}'.format(self.details.minTick, self.priceIncrement))

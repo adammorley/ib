@@ -6,7 +6,9 @@ import supervise
 import sys
 import time
 
-services = '/home/adam/service/'
+from market import config
+
+services = config.serviceDir()
 autoOrder_ES = services+'autoOrder_ES'
 controller = services+'controller'
 allServiceDirs = [autoOrder_ES, controller]
@@ -30,7 +32,7 @@ while True:
         logging.critical('gateway is not up: {}'.format(dirToService[controller].status()))
 
     for d in allServiceDirs:
-        if os.path.exists(d+'/'+'fatal'):
+        if os.path.exists(d+'/'+config.fatalFilename())
             logging.critical('saw a fatal error on {}'.format(d))
 
         pid0 = dirToService[d].status().pid

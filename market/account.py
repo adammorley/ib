@@ -1,7 +1,9 @@
+from market import fatal
+
 def validate(aSum, account):
     for i in range(0, len(aSum)):
         if aSum[i][0] != account:
-            raise RuntimeError('problem: did not get back expected {} from account summary {}'.format(aSum[i], aSum))
+            fatal.errorAndExit('problem: did not get back expected {} from account summary {}'.format(aSum[i], aSum))
 
 def summary(ibc, account):
     ibc.sleep(0)
@@ -23,14 +25,14 @@ def summaryField(ibc, account, field, usd=None):
     for i in range(0, len(aSum)):
         if aSum[i][1] == field and (not usd or aSum[i][3] == 'USD'):
             return aSum[i][2]
-    raise RuntimeError('problem: did not find {} in account summary: {}'.format(field, aSum))
+    fatal.errorAndExit('problem: did not find {} in account summary: {}'.format(field, aSum))
 
 def valuesField(ibc, account, field, usd=None):
     aVal = values(ibc, account)
     for i in range(0, len(aVal)):
         if aVal[i][1] == field and (not usd or aVal[i][3] == 'USD'):
             return aVal[i][2]
-    raise RuntimeError('problem: did not find {} in account values: {}'.format(field, aVal))
+    fatal.errorAndExit('problem: did not find {} in account values: {}'.format(field, aVal))
 
 def availableFunds(ibc, account):
     return float( valuesField(ibc, account, 'AvailableFunds', usd=True) )

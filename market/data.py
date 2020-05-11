@@ -1,6 +1,8 @@
 import logging
 import re
 
+from market import fatal
+
 def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     rHdmsQueryCanceled = 162 # re.compile('.*?API historical data query cancelled.*?')
     rMdfOk = 2104 # re.compile('.*?Market data farm connection is OK.*?')
@@ -29,7 +31,7 @@ barSizeToDuration = {'1 min': {'unit': 'S', 'value': 60}}
 def getHistData(wc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=False, f=2, k=False):
     duration = barSizeToDuration[barSizeStr]
     if not duration['unit'] or duration['unit'] != 'S' or not duration['value'] or not isinstance(duration['value'], int):
-        raise RuntimeError('using seconds is supported')
+        fatal.errorAndExit('using seconds is supported')
 
     if d is not None: # we're doing a backtest, so add the long interval to build the SMA
         d = d *60*24 + longInterval

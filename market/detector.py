@@ -72,11 +72,10 @@ def setupData(wc, conf, backtestArgs=None):
         useRth = False if conf.buyOutsideRth else True
         histData = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
         if len(histData) < dataStore.longInterval *2:
-            logging.critical('did not get back the right amount of data from historical data call, perhaps broken?')
-            raise RuntimeError('no dice!')
+            fatal.fatal(conf, 'did not get back the right amount of data from historical data call, perhaps broken?')
         dataStore.calcInitEMAs(histData)
     else:
-        raise RuntimeError('do not know what to do!')
+        fatal.errorAndExit('do not know what to do!')
     return dataStore, dataStream
 
 # get the next minute's bar
@@ -141,7 +140,7 @@ class EMA:
         dur = data.barSizeToDuration[barSizeStr]
         self.wContract = wContract
         if dur['unit'] != 'S' or not dur['value'] or not isinstance(dur['value'], int):
-            raise RuntimeError('re-factor')
+            fatal.errorAndExit('re-factor')
         self.sleepTime = dur['value']
 
     def __repr__(self):
@@ -182,7 +181,7 @@ class EMA:
                 # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
                 smaStartIndex = len(dataStream)-1 - interval*2
                 if interval == self.longInterval and smaStartIndex < 0:
-                    raise RuntimeError('wrong interval calc: {} {} {}'.format(smaStartIndex, len(dataStream), interval))
+                    fatal.errorAndExit('wrong interval calc: {} {} {}'.format(smaStartIndex, len(dataStream), interval))
                 sma = data.calcSMA(interval, dataStream, smaStartIndex)
                 logging.info('calculated sma of {} for {} starting at {}'.format(sma, interval, smaStartIndex))
     
@@ -212,8 +211,7 @@ class EMA:
             logging.info('recalculating emas using market midpoint of {}'.format(midpoint))
 
         if math.isnan(midpoint):
-            logging.critical('getting an NaN from midpoint call during open market conditions {} {}'.format(midpoint, self.wContract.contract))
-            raise RuntimeError('do not know how to handle a lack of bid/ask during open market conditions.')
+            fatal.fatal('getting an NaN from midpoint call during open market conditions, do not know how to handle missing bid/ask during open hours {} {}'.format(midpoint, self.wContract.contract))
 
         short = data.calcEMA(midpoint, self.short, self.shortInterval)
         long_ = data.calcEMA(midpoint, self.long, self.longInterval)

@@ -15,6 +15,7 @@ from market import contract
 from market import data
 from market import date
 from market import detector
+from market import fatal
 from market import order
 from market import trade
 
@@ -65,7 +66,7 @@ def checkForExcessiveLosses(wc, conf):
         sys.exit(1)
     p = getPortfolio(wc)
     if loss is None and p is not None and p.contract == wc.contract:
-        raise RuntimeError('somethings wrong with pnl: {} {} {}'.format(wc.pnl, wc.contract, p))
+        fatal.errorAndExit('somethings wrong with pnl: {} {} {}'.format(wc.pnl, wc.contract, p))
 
 startTime = now()
 
@@ -126,7 +127,7 @@ while now() < startTime + datetime.timedelta(hours=20):
         try:
             orderDetails = order.OrderDetails(buyPrice, conf, wc)
         except FloatingPointError as e:
-            logging.error('got an NaN during order creation: {} {} {}'.format(e, buyPrice, orderDetails))
+            logging.critical('got an NaN during order creation: {} {} {}'.format(e, buyPrice, orderDetails))
             orderDetails = None
 
     if orderDetails is not None:
@@ -138,7 +139,7 @@ while now() < startTime + datetime.timedelta(hours=20):
 
         orders = order.CreateBracketOrder(orderDetails, conf.account)
         if not order.adequateFunds(orderDetails, orders):
-            logging.error('not enough funds to place a trade.')
+            logging.critical('not enough funds to place a trade.')
             makeTrade = False
 
         if makeTrade:

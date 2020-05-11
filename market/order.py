@@ -1,6 +1,8 @@
 import copy
 import logging
 
+from market import fatal
+
 from market.contract import wContract
 from market.config import Config
 class OrderDetails:
@@ -171,7 +173,7 @@ def adequateFunds(orderDetails, orders):
         wio = whatIfOrder(orders.buyOrder)
         os = orderDetails.wContract.ibClient.whatIfOrder(orderDetails.wContract.contract, wio)
         if not os.initMarginAfter or not isinstance(os.initMarginAfter, str):
-            raise RuntimeError('got back invalid format: {} {} {}'.format(os, orderDetails, order))
+            fatal.errorAndExit('got back invalid format: {} {} {}'.format(os, orderDetails, order))
         ima = float( os.initMarginAfter )
         lhs += ima
     logging.warn('funds: {} {} {}'.format(lhs, af_rhs, bp_rhs))

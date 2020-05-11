@@ -1,6 +1,8 @@
 import logging
 import math
 
+from market import fatal
+
 class Bar:
     open_: float = 0.0
     close: float = 0.0
@@ -40,7 +42,7 @@ class Bar:
         elif self.close == self.open and self.high != self.low:
             self.color = 'G'
         elif math.isnan(self.close) or math.isnan(self.open):
-            raise FloatingPointError('got a self with NaN: %s', self)
+            fatal.errorAndExit('got a self with NaN: {}'.format(self))
 
 class BarSet:
     first: Bar = None
@@ -62,7 +64,7 @@ class BarSet:
         else:
             buyPrice = self.third.close
             if math.isnan(buyPirce):
-                raise FloatingPointError('got floating point which is NaN {} {}'.format(buyPrice, self.third))
+                fatal.errorAndExit('got floating point which is NaN {} {}'.format(buyPrice, self.third))
         
             logging.info('found a potential buy point: %d', buyPrice)
         return buyPrice

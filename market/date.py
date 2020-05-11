@@ -12,13 +12,13 @@ def parseOpenHours(cd):
 # parse the timezoneId
 def parseTimezone(timeZoneId):
     if not isinstance(timeZoneId, str):
-        raise RuntimeError('timeZoneId should be a string')
+        fatal.errorAndExit('timeZoneId should be a string')
     return pytz.timezone(timeZoneId)
 
 # parse the contract details into datetime objects
 def parseTradingHours(tradingHours, tz):
     if not isinstance(tradingHours, str):
-        raise RuntimeError('trading hours is a string')
+        fatal.errorAndExit('trading hours is a string')
     openHours = []
     # '20200427:0930-20200427:1600;20200428:0930-20200428:1600'
     ranges = tradingHours.split(';')
@@ -30,12 +30,12 @@ def parseTradingHours(tradingHours, tz):
             continue
         ts = range_.split('-')
         if len(ts) != 2:
-            raise RuntimeError('only two timestamps per range: {}     {}'.format(ts, tradingHours))
+            fatal.errorAndExit('only two timestamps per range: {}     {}'.format(ts, tradingHours))
         start = tz.localize(datetime.strptime(ts[0], '%Y%m%d:%H%M')).astimezone(pytz.utc)
         end = tz.localize(datetime.strptime(ts[1], '%Y%m%d:%H%M')).astimezone(pytz.utc)
         r = DateTimeRange(start, end)
         if not r.is_valid_timerange():
-            raise RuntimeError('should get a valid timerange')
+            fatal.errorAndExit('should get a valid timerange')
         openHours.append(r)
     logging.debug('openHours: %s', openHours)
     return openHours
@@ -81,7 +81,7 @@ def isMarketOpen(r, dt=None):
 def marketOpenedLessThan(r, td):
     now = datetime.utcnow().astimezone(pytz.utc)
     if len(r) < 2:
-        raise RuntimeError('seems like this might not be a range')
+        fatal.errorAndExit('seems like this might not be a range')
     for r_ in r:
         if now not in r_:
             continue
