@@ -4,8 +4,6 @@ import sys
 
 from market import config
 
-fatalFilename = config.fatalFilename()
-
 def serviceDir(conf):
     daemonName = sys.argv[0]
     return config.serviceDirs()+'/'daemonName+'_'conf.symbol
