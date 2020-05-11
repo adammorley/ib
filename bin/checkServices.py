@@ -12,7 +12,7 @@ controller = services+'controller'
 allServiceDirs = [autoOrder_ES, controller]
 
 dirToService = {autoOrder_ES: supervise.Service(autoOrder_ES), controller: supervise.Service(controller)}
-crashed = {autoOrder_ES: None, controller: None}
+restarted = {autoOrder_ES: None, controller: None}
 first = True
 
 loopSleep=5
@@ -31,21 +31,21 @@ while True:
 
     if first:
         for d in allServiceDirs:
-            uptime0 = dirToService[d].status().uptime
+            pid0 = dirToService[d].status().pid
             time.sleep(loopSleep)
-            uptime1 = dirToService[d].status().uptime
-            if uptime0 > uptime1 or uptime0 < 2 and uptime1 < 2:
-                crashed[d] = True
+            pid1 = dirToService[d].status().pid
+            if pid0 != pid1:
+                restarted[d] = True
         first = False
     else:
         for d in allServiceDirs:
-            uptime0 = dirToService[d].status().uptime
+            pid0 = dirToService[d].status().pid
             time.sleep(loopSleep)
-            uptime1 = dirToService[d].status().uptime
-            if crashed[d] and (uptime0 > uptime1 or uptime0 < 2 and uptime1 < 2):
-                logging.critical('serivce {} is crash looping'.format(d))
+            pid1 = dirToService[d].status().pid
+            if restarted[d] and pid0 != pid1:
+                logging.critical('serivce {} might be crash looping'.format(d))
             else:
-                crashed[d] = None
+                restarted[d] = None
         first = True
 
     time.sleep(60)
