@@ -26,6 +26,9 @@ signal.signal(signal.SIGTERM, term)
 
 while True:
     time.sleep(60)
+    if dirToService[controller].status().status != 1:
+        logging.critical('gateway is not up: {}'.format(dirToService[controller].status()))
+
     for d in allServiceDirs:
         if os.path.exists(d+'/'+'fatal'):
             logging.critical('saw a fatal error on {}'.format(d))

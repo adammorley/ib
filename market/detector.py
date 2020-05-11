@@ -14,13 +14,12 @@ def connectivityError(reqId, errorCode, errorString, contract):
     rConnectivityLost = 1100 # re.compile('.*?Connectivity between IB and Trader Workstation has been lost.*?')
     rConnectivityRestoredDataLost = 1101 # re.compile('.*?Connectivity between IB and TWS has been restored- data lost.*?')
     rMdfDisconnect = 2103 # re.compile('.*?Market data farm connection is inactive but should be available upon demand.*?')
-    errorCodes = [rConnectivityLost, rConnectivityRestoredDataLost, rMdfDisconnect]
+    rCompetingSessions = 10197 # re.compile('.*?No market data during competing live session.*?')
+    errorCodes = [rConnectivityLost, rConnectivityRestoredDataLost, rMdfDisconnect, rCompetingSessions]
     for ec in errorCodes:
         if errorCode == ec:
-            logging.error('received an error which requires restart: {} {}'.format(errorCode, errorString))
-            if errorCode == rConnectivityLost:
-                logging.warn('received 1100 error, waiting a minute before restart')
-                time.sleep(60)
+            logging.error('received an error which requires restart, pausing briefly before restart: {} {}'.format(errorCode, errorString))
+            time.sleep(30)
             sys.exit(0)
 
     rConnectivityRestoredNoDataLoss = 1102 # re.compile('.*?Connectivity between IB and Trader Workstation has been restored - data maintained.*?')
