@@ -38,8 +38,8 @@ def isMaxQty(p, conf):
     else:
         return p.position >= conf.qty * conf.openPositions
 
-def getPosition(wc):
-    positions = wc.ibClient.positions()
+def getPortfolio(wc):
+    positions = wc.ibClient.portfolio()
     wc.ibClient.sleep(0)
     for p in positions:
         if p.contract == wc.contract:
@@ -47,7 +47,7 @@ def getPosition(wc):
     return None
 
 def outputIfHolding(wc):
-    p = getPosition(wc)
+    p = getPortfolio(wc)
     if p is not None and p.contract == wc.contract:
         out = ''
         if p.position > 0:
@@ -62,7 +62,7 @@ def checkForExcessiveLosses(wc, conf):
     if loss:
         logging.critical('lost too many dollars, exiting.  {} {} {} {}'.format(config.maxLoss, wc.pnl, conf.account, wc.contract))
         sys.exit(1)
-    p = getPosition(wc)
+    p = getPortfolio(wc)
     if loss is None and p is not None and p.contract == wc.contract:
         raise RuntimeError('somethings wrong with pnl: {} {} {}'.format(wc.pnl, wc.contract, p))
 

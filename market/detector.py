@@ -37,7 +37,7 @@ def lossTooHigh(wc, conf):
     wc.updatePnl(conf.account)
     if wc.pnl.realizedPnL != wc.pnl.realizedPnL:
         return None
-    elif wc.pnl.realizedPnL < (-1*config.maxLoss):
+    elif wc.pnl.realizedPnL < (-1*conf.maxLoss):
         return True
     return False
 
