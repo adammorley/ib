@@ -38,7 +38,7 @@ def startGatewayWatchdog(configFile):
     if conf.prod and conf.tradingMode != 'live':
         raise RuntimeError('prod is live')
 
-    controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni='/home/adam/ibcCreds/config.ini', ibcPath='/home/adam/ibc')
+    controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni='/home/adam/ibCreds/config.ini', ibcPath='/home/adam/ibc')
     logging.warn('starting API gateway using watchdog in {} mode'.format(conf.tradingMode))
     ib = IB()
     ib.connectedEvent += onConnected

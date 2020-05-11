@@ -8,7 +8,7 @@ def fatalFilename():
     return 'fatal'
 
 def serviceDirs():
-    return '/home/adam/service'
+    return '/home/adam/service/'
 
 def getConfig(configFile, detectorOn=None):
     with open(configFile, 'r') as f:

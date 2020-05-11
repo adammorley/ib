@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import datetime
 import logging
 import os
 import signal
@@ -6,7 +7,38 @@ import supervise
 import sys
 import time
 
+sys.path.append(r'/home/adam/ibCur')
 from market import config
+
+apiKey = None
+with open('/home/adam/ibCreds/sendgrid.key', 'r') as f:
+    apiKey = f.readline().replace('\n', '')
+
+def sendEmail(serviceName, errorString):
+    import sendgrid
+    addr = 'adam.morley.mobile@gmail.com'
+    subject = 'CRITICAL from ' + serviceName
+    content = sendgrid.helpers.mail.Content('text/plain', errorString)
+    message = sendgrid.helpers.mail.Mail(sendgrid.helpers.mail.Email(addr), sendgrid.helpers.mail.To(addr), subject, content)
+    try:
+        sg = sendgrid.SendGridAPIClient(apiKey)
+        r = sg.send(message)
+        if r.status_code != 200 and r.status_code != 202:
+            logging.critical('problem sending message: {}'.format(r))
+    except Exception as e:
+        logging.critical('exception generated: {}'.format(e))
+
+sentMailTime = None
+def fatal(serviceName, msg):
+    global sentMailTime
+    logging.critical(msg)
+    now = datetime.datetime.utcnow()
+    if sentMailTime == None or sentMailTime is not None and now > sentMailTime + datetime.timedelta(minutes=30):
+        sendEmail(serviceName, msg)
+        sentMailTime = now
+        logging.info('sent email about critical error')
+    else:
+        logging.info('sent mail recently, waiting to send')
 
 services = config.serviceDirs()
 autoOrder_ES = services+'autoOrder_ES'
@@ -29,11 +61,11 @@ signal.signal(signal.SIGTERM, term)
 while True:
     time.sleep(60)
     if dirToService[controller].status().status != 1:
-        logging.critical('gateway is not up: {}'.format(dirToService[controller].status()))
+        fatal(controller, 'gateway is not up: {}'.format(dirToService[controller].status()))
 
     for d in allServiceDirs:
-        if os.path.exists(d+'/'+config.fatalFilename())
-            logging.critical('saw a fatal error on {}'.format(d))
+        if os.path.exists(d+'/'+config.fatalFilename()):
+            fatal(d, 'saw a fatal error on {}'.format(d))
 
         pid0 = dirToService[d].status().pid
         time.sleep(loopSleep)
@@ -43,4 +75,4 @@ while True:
         elif pid0 != pid1 and not restarted[d]:
             restarted[d] = True
         elif pid0 != pid1 and restarted[d]:
-            logging.critical('serivce {} might be crash looping'.format(d))
+            fatal(d, 'serivce {} might be crash looping'.format(d))
