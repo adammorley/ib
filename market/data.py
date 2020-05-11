@@ -9,7 +9,7 @@ def dataStreamErrorHandler(reqId, errorCode, errorString, contract):
     rHdmsOk = 2106 # re.compile('.*?HMDS data farm connection is OK.*?')
     rHmdsDisconnectOk = 2107 # re.compile('.*?HMDS data farm connection is inactive but should be available upon demand.*?')
     rMdfDisconnectOk = 2108 # re.compile('.*?Market data farm connection is inactive but should be available upon demand.*?')
-    rRthIgnored = 2109 # re.compile('.*?Outside Regular Trading Hours.*?')
+    rRthIgnored = 2109 # re.compile('.*?Attribute 'Outside Regular Trading Hours' is ignored based on the order type and destination.*?')
     rMdfC = 2119 # re.compile('.*?Market data farm is connecting.*?')
     errorCodes = [rHdmsQueryCanceled, rMdfOk, rHdmsBroken, rHdmsOk, rHmdsDisconnectOk, rMdfDisconnectOk, rRthIgnored, rMdfC]
     notFound = True

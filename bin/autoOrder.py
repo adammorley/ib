@@ -3,6 +3,7 @@
 import datetime
 import logging
 import pytz
+import signal
 import sys
 
 sys.path.append(r'/home/adam/ibCur')
@@ -68,6 +69,12 @@ def checkForExcessiveLosses(wc, conf):
 
 startTime = now()
 
+logging.warn('starting up...')
+def term(*args):
+    logging.warn('shutting down')
+    sys.exit(0)
+signal.signal(signal.SIGTERM, term)
+
 conf = config.getConfig(args.conf, detectorOn=True)
 ibc = connect.connect(conf, args.debug)
 from ib_insync import util
@@ -124,7 +131,7 @@ while now() < startTime + datetime.timedelta(hours=20):
 
     if orderDetails is not None:
         makeTrade = True
-        p = getPosition(wc)
+        p = getPortfolio(wc)
         if p is not None and p.contract == wc.contract and isMaxQty(p, conf):
             logging.warn('passing on trade as max positions already open')
             makeTrade = False
