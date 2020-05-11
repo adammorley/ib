@@ -17,7 +17,7 @@ openPositions: 1
 totalTrades: 1
 buyOutsideRth: true # ib is weird
 sellOutsideRth: true # ib is weird
-greyzone: 15
+greyzone: 30
 detector: emaCrossover
 longEMA: 20
 shortEMA: 5
