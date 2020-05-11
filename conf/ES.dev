@@ -15,8 +15,8 @@ maxLoss: 10000
 qty: 1
 openPositions: 3
 totalTrades: 99999
-buyOutsideRth: false
-sellOutsideRth: false
+buyOutsideRth: true # ib is weird
+sellOutsideRth: true # ib is weird
 greyzone: 15
 detector: emaCrossover
 longEMA: 20

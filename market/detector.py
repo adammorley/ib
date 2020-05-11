@@ -232,7 +232,7 @@ class EMA:
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to watching
+        if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to waiting
             logging.warn('midpoint fell below long ema, stopping watch')
             self.areWatching = False
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
