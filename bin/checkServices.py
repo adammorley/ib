@@ -25,27 +25,17 @@ def term(*args):
 signal.signal(signal.SIGTERM, term)
 
 while True:
+    time.sleep(60)
     for d in allServiceDirs:
         if os.path.exists(d+'/'+'fatal'):
-            logging.critical('saw a fatal error on {}'.format(t))
+            logging.critical('saw a fatal error on {}'.format(d))
 
-    if first:
-        for d in allServiceDirs:
-            pid0 = dirToService[d].status().pid
-            time.sleep(loopSleep)
-            pid1 = dirToService[d].status().pid
-            if pid0 != pid1:
-                restarted[d] = True
-        first = False
-    else:
-        for d in allServiceDirs:
-            pid0 = dirToService[d].status().pid
-            time.sleep(loopSleep)
-            pid1 = dirToService[d].status().pid
-            if restarted[d] and pid0 != pid1:
-                logging.critical('serivce {} might be crash looping'.format(d))
-            else:
-                restarted[d] = None
-        first = True
-
-    time.sleep(60)
+        pid0 = dirToService[d].status().pid
+        time.sleep(loopSleep)
+        pid1 = dirToService[d].status().pid
+        if pid0 == pid1:
+            restarted[d] = False
+        elif pid0 != pid1 and not restarted[d]:
+            restarted[d] = True
+        elif pid0 != pid1 and restarted[d]:
+            logging.critical('serivce {} might be crash looping'.format(d))
