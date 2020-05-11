@@ -181,7 +181,7 @@ class EMA:
             else:
                 # first we calculate the SMA over the interval (going backwards) one interval back in the dataStream
                 smaStartIndex = len(dataStream)-1 - interval*2
-                if interval == self.longInterval and smaStartIndex != 0:
+                if interval == self.longInterval and smaStartIndex < 0:
                     raise RuntimeError('wrong interval calc: {} {} {}'.format(smaStartIndex, len(dataStream), interval))
                 sma = data.calcSMA(interval, dataStream, smaStartIndex)
                 logging.info('calculated sma of {} for {} starting at {}'.format(sma, interval, smaStartIndex))
@@ -232,18 +232,18 @@ class EMA:
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
-            logging.warn('state just changed to crossed, starting to watch')
-            self.areWatching = True
-            self.countOfCrossedIntervals = 0
+        if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to watching
+            logging.warn('midpoint fell below long ema, stopping watch')
+            self.areWatching = False
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
             logging.warn('state just changed to uncrossed, stopping watch')
             self.areWatching = False
+        elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+            logging.warn('state just changed to crossed, starting to watch')
+            self.areWatching = True
+            self.countOfCrossedIntervals = 0
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
-        elif self.areWatching and midpoint < self.long:
-            logging.warn('midpoint fell below long ema, stopping watch')
-            self.areWatching = False
         logging.info('after checks: %s', self)
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:

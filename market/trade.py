@@ -40,18 +40,20 @@ def PlaceBracketTrade(orders, orderDetails):
         stop = orders.stopOrder.trailingPercent
     else:
         stop = orders.stopOrder.auxPrice
-    logging.warn('submitted BUY @ {}, LMT @ {}, STP/TRAIL @ {}'.format(orders.buyOrder.lmtPrice, orders.profitOrder.lmtPrice, stop))
-
+    logging.warn('submitted BUY @ {}, id: {}, qty: {}, tif: {}, LMT @ {}, id: {}, qty: {}, tif: {}, STP/TRAIL @ {}, id: {}, qty: {}, tif: {}'.format(orders.buyOrder.lmtPrice, orders.buyOrder.orderId, orders.buyOrder.totalQuantity, orders.buyOrder.tif, orders.profitOrder.lmtPrice, orders.profitOrder.orderId, orders.profitOrder.totalQuantity, orders.profitOrder.tif, stop, orders.stopOrder.orderId, orders.stopOrder.totalQuantity, orders.stopOrder.tif))
+    orderDetails.wContract.ibClient.sleep(0)
     return trades
 
 def CheckTradeExecution(trades, orderDetails):
     ids = []
+    out = ''
     for trade in trades:
-        ids.append( str(trade.orderStatus.permId) )
+        price = trade.order.lmtPrice if trade.order.lmtPrice > 0.0 else trade.order.auxPrice
+        out += 'found a {} order, type: {}, id: {}, permID: {}, price: {}, qty: {}, tif: {}, avgFillPrice: {};'.format(trade.order.action, trade.order.orderType, trade.order.orderId, trade.orderStatus.permId, price, trade.order.totalQuantity, trade.order.tif, trade.orderStatus.avgFillPrice)
         if trade.orderStatus.status == OrderStatus.Cancelled:
             logging.error('got a canceled trade for %s doing %s %s:    Log: %s', trade.contract.symbol, trade.order.action, trade.order.orderType, trade.log)
         if trade.order.action == 'BUY' and trade.orderStatus.status != OrderStatus.Filled:
             logging.error('BUY order on %s was not filled (outside rth?):    %s', trade.contract.symbol, trade)
         # FIXME: add thing to detect whether order flowed to get a permanent id or not
 
-    logging.warn('entered a BUY order for %s; perm order IDs: %s',  orderDetails.wContract.symbol, ', '.join(ids))
+    logging.warn('entered some orders for {}: {}'.format(orderDetails.wContract.localSymbol, out))

@@ -61,7 +61,7 @@ def outputIfHolding(wc):
 def checkForExcessiveLosses(wc, conf):
     loss = detector.lossTooHigh(wc, conf)
     if loss:
-        logging.critical('lost too many dollars, exiting.  {} {} {} {}'.format(config.maxLoss, wc.pnl, conf.account, wc.contract))
+        logging.critical('lost too many dollars, exiting.  {} {} {} {}'.format(conf.maxLoss, wc.pnl, conf.account, wc.contract))
         sys.exit(1)
     p = getPortfolio(wc)
     if loss is None and p is not None and p.contract == wc.contract:
