@@ -71,6 +71,9 @@ def setupData(wc, conf, backtestArgs=None):
 
         useRth = False if conf.buyOutsideRth else True
         histData = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
+        if len(histData) < dataStore.longInterval *2:
+            logging.critical('did not get back the right amount of data from historical data call, perhaps broken?')
+            raise RuntimeError('no dice!')
         dataStore.calcInitEMAs(histData)
     else:
         raise RuntimeError('do not know what to do!')
