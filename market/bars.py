@@ -63,7 +63,7 @@ class BarSet:
             buyPrice = None
         else:
             buyPrice = self.third.close
-            if math.isnan(buyPirce):
+            if math.isnan(buyPrice):
                 fatal.errorAndExit('got floating point which is NaN {} {}'.format(buyPrice, self.third))
         
             logging.info('found a potential buy point: %d', buyPrice)

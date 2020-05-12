@@ -245,7 +245,7 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        logging.warn('updated EMAs short: {}/long: {} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
+        logging.warn('updated EMAs short: {.3f}/long: {.3f} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
