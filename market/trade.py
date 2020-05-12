@@ -49,11 +49,6 @@ def CheckTradeExecution(trades, orderDetails):
     out = ''
     for trade in trades:
         price = trade.order.lmtPrice if trade.order.lmtPrice > 0.0 else trade.order.auxPrice
-        out += 'found a {} order, type: {}, id: {}, permID: {}, price: {}, qty: {}, tif: {}, avgFillPrice: {};'.format(trade.order.action, trade.order.orderType, trade.order.orderId, trade.orderStatus.permId, price, trade.order.totalQuantity, trade.order.tif, trade.orderStatus.avgFillPrice)
+        logging.warn('placed a trade, action: {}, type: {}, id: {}, permId: {}, price: {}, avgFillPrice: {}, qty: {}, tif: {}'.format(trade.order.action, trade.order.orderType, trade.order.orderId, trade.orderStatus.permId, price, trade.orderStatus.avgFillPrice, trade.order.totalQuantity, trade.order.tif))
         if trade.orderStatus.status == OrderStatus.Cancelled:
             logging.error('got a canceled trade for %s doing %s %s:    Log: %s', trade.contract.symbol, trade.order.action, trade.order.orderType, trade.log)
-        if trade.order.action == 'BUY' and trade.orderStatus.status != OrderStatus.Filled:
-            logging.error('BUY order on %s was not filled (outside rth?):    %s', trade.contract.symbol, trade)
-        # FIXME: add thing to detect whether order flowed to get a permanent id or not
-
-    logging.warn('entered some orders for {}: {}'.format(orderDetails.wContract.localSymbol, out))
