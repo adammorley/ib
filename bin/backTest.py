@@ -43,6 +43,15 @@ def modTotals(totals):
         totals['gl']=totals['gl']*50
     return totals
 
+# FIXME: have to do back-calculation here to figure out where to start calculating from
+def setupThreeBar(dataStore, dataStream):
+    newBars = None
+    if conf.detector == 'threeBarPattern':
+        b = len(dataStream)
+        dataStream = backtest.anotateBars(dataStream)
+        dataStore.first = backtest.getNextBar(dataStream, 0)
+        dataStore.second = backtest.getNextBar(dataStream, 1)
+
 conf = config.getConfig(args.conf, detectorOn=True)
 ibc = connect.connect(conf, args.debug)
 if args.info:
@@ -56,15 +65,6 @@ wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 useRth = False if conf.buyOutsideRth else True
 backtestArgs = {'watchCount': args.watchCount, 'shortInterval': args.shortEMA, 'longInterval': args.longEMA, 'e': args.endDate, 'd': args.duration, 't': 'MIDPOINT', 'r': useRth, 'f': 2, 'k': False}
 dataStore, dataStream = detector.setupData(wc, conf, backtestArgs)
-
-newBars = None
-if conf.detector == 'threeBarPattern':
-    b = len(dataStream)
-    dataStream = backtest.anotateBars(dataStream)
-    if len(dataStream) != b:
-        fatal.errorAndExit('these should match.')
-    dataStore.first = backtest.getNextBar(dataStream, 0)
-    dataStore.second = backtest.getNextBar(dataStream, 1)
 
 if args.single:
     totals = backtest.backtest(wc, dataStream, dataStore, conf)
@@ -93,8 +93,6 @@ for p in [1, 5, 10]:
                             dataStore.backTest = True
                             dataStore.byPeriod = p
                             dataStore.calcInitEMAs(dataStream)
-                        else:
-
                         totals = modTotals( backtest.backtest(wc, dataStream, dataStore, conf) )
                         r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
                         if totals['gl'] > 0:
