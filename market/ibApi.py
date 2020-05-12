@@ -6,6 +6,9 @@ import yaml
 from ib_insync import ibcontroller
 from ib_insync import IB
 
+sys.path.append(r'/home/adam/svc')
+from svc import paths
+
 class Config:
     account: str = None
     prod: bool = False
@@ -38,7 +41,7 @@ def startGatewayWatchdog(configFile):
     if conf.prod and conf.tradingMode != 'live':
         raise RuntimeError('prod is live')
 
-    controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni='/home/adam/ibCreds/config.ini', ibcPath='/home/adam/ibc')
+    controller = ibcontroller.IBC(twsVersion=972, gateway=True, tradingMode=conf.tradingMode, ibcIni=paths.creds()+'/config.ini', ibcPath=paths.rootDir()+'/ibc')
     logging.warn('starting API gateway using watchdog in {} mode'.format(conf.tradingMode))
     ib = IB()
     ib.connectedEvent += onConnected
