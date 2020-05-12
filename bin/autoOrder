@@ -6,7 +6,7 @@ import pytz
 import signal
 import sys
 
-sys.path.append(r'/home/adam/ibCur')
+sys.path.append(r'/home/adam/ib')
 from market import account
 from market import bars
 from market import config

@@ -6,7 +6,7 @@ import time
 
 from ib_insync import *
 
-sys.path.append(r'.')
+sys.path.append(r'/home/adam/ib')
 from api import config
 from api import request
 

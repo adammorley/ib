@@ -8,8 +8,7 @@ import yaml
 
 from ib_insync import *
 
-sys.path.append(r'.')
-
+sys.path.append(r'/home/adam/ib')
 from market import backtest
 from market import bars
 from market import config

@@ -3,7 +3,7 @@
 import logging
 import sys
 
-sys.path.append(r'.')
+sys.path.append(r'/home/adam/ib')
 from market import bars
 from market import config
 from market import connect
