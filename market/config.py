@@ -1,15 +1,6 @@
 import logging
 import yaml
 
-def downFilename():
-    return 'down'
-
-def fatalFilename():
-    return 'fatal'
-
-def serviceDirs():
-    return '/home/adam/service/'
-
 def getConfig(configFile, detectorOn=None):
     with open(configFile, 'r') as f:
         return ProcessConfig(yaml.load(f), detectorOn)

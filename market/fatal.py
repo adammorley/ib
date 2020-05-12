@@ -3,17 +3,18 @@ import pathlib
 import sys
 import time
 
-from market import config
+sys.path.append(r'/home/adam/svc')
+from svc import paths
 
 def serviceDir(conf):
     daemonName = sys.argv[0]
-    return config.serviceDirs() + daemonName + '_' + conf.symbol
+    return paths.serviceDirs() + daemonName + '_' + conf.symbol
 
 def touchDownFile(conf):
-    pathlib.Path(serviceDir(conf) + config.downFilename()).touch()
+    pathlib.Path(serviceDir(conf) + paths.downFilename()).touch()
 
 def touchFatalFile(conf):
-    pathlib.Path(serviceDir(conf) + config.fatalFilename()).touch()
+    pathlib.Path(serviceDir(conf) + paths.fatalFilename()).touch()
 
 def fatal(conf, msg):
     logging.critical(msg)
