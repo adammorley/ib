@@ -94,8 +94,8 @@ def ProcessConfig(conf, detectorOn=None):
     if detectorOn:
         config.detector = conf['detector']
         config.barSizeStr = conf['barSizeStr']
+        config.greyzone = conf['greyzone']
         if config.detector == 'emaCrossover':
-            config.greyzone = conf['greyzone']
             config.shortEMA = conf['shortEMA']
             config.longEMA = conf['longEMA']
             config.watchCount = conf['watchCount']

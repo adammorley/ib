@@ -44,10 +44,10 @@ def lossTooHigh(wc, conf):
 def setupData(wc, conf, backtestArgs=None):
     dataStore = None
     dataStream = None
+    if conf.detector == 'threeBarPattern':
+        dataStore = barSet = bars.BarSet()
     if backtestArgs is not None:
-        if conf.detector == 'threeBarPattern':
-            dataStore = barSet = bars.BarSet()
-        elif conf.detector == 'emaCrossover':
+        if conf.detector == 'emaCrossover':
             dataStore = EMA(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
             dataStore.backTest = True
             logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
@@ -233,9 +233,11 @@ class EMA:
         if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to waiting
             logging.info('midpoint fell below long ema, stopping watch')
             self.areWatching = False
+            self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
             logging.info('state just changed to uncrossed, stopping watch')
             self.areWatching = False
+            self.countOfCrossedIntervals = 0
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             logging.info('state just changed to crossed, starting to watch')
             self.areWatching = True
@@ -247,5 +249,6 @@ class EMA:
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
+            self.countOfCrossedIntervals = 0
             logging.warn('returning a buy {}'.format(self))
             return midpoint # buyPrice
