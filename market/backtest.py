@@ -180,7 +180,7 @@ def backtest(wc, dataStream, dataStore, conf):
                 if conf.detector == 'threeBarPattern':
                     orders, amount = checkTradeExecution(dataStore.third, orders)
                 elif conf.detector == 'emaCrossover':
-                    orders, amount = checkTradeExecution(dataStream[dataStore.curIndex], orders)
+                    orders, amount = checkTradeExecution(dataStream[dataStore.curEmaIndex+1], orders)
                 logging.warn('position config %s', od.config)
                 # check if the trade executed
                 if orders is not None:

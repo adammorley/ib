@@ -205,7 +205,7 @@ class EMA:
         midpoint = None
         if self.backTest:
             self.curEmaIndex = self.curEmaIndex + 1
-            midpoint = dataStream[self.curEmaIndex].midpoint()
+            midpoint = dataStream[self.curEmaIndex].close
             logging.info('recalculating emas at index {} using price of {}'.format(self.curEmaIndex, midpoint))
         else:
             midpoint = dataStream.midpoint()

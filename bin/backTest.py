@@ -28,14 +28,14 @@ parser.add_argument('--info', action='store_true', default=None)
 parser.add_argument('--error', action='store_true', default=None)
 parser.add_argument('--conf', type=str, required=True)
 
-parser.add_argument("--duration", default=60, type=int)
+parser.add_argument("--duration", default=10, type=int)
 parser.add_argument("--endDate", default='', type=str)
 
-parser.add_argument('--shortEMA', default=None, type=int)
-parser.add_argument('--longEMA', default=None, type=int)
-parser.add_argument('--watchCount', default=None, type=int)
-parser.add_argument('--profitTarget', default=None, type=float)
-parser.add_argument('--stopTarget', default=None, type=float)
+parser.add_argument('--shortEMA', default=15, type=int)
+parser.add_argument('--longEMA', default=40, type=int)
+parser.add_argument('--watchCount', default=15, type=int)
+parser.add_argument('--profitTarget', default=3, type=float)
+parser.add_argument('--stopTarget', default=7, type=float)
 args = parser.parse_args()
 
 def updateBarSet(newBars, i, dataStore):
@@ -50,19 +50,19 @@ def modTotals(totals):
         totals['gl']=totals['gl']*50
     return totals
 
-ibc = connect.connect(args.debug)
+conf = config.getConfig(args.conf, detectorOn=True)
+ibc = connect.connect(conf, args.debug)
 if args.info:
     util.logToConsole(logging.INFO)
 if args.error:
     util.logToConsole(logging.ERROR)
-conf = config.getConfig(args.conf, detectorOn=True)
 conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget, args.shortEMA, args.longEMA, args.watchCount)
 
 wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
 useRth = False if conf.buyOutsideRth else True
-backtestArgs = {'watchCount': args.watchCount, 'shortInterval': args.short, 'longInterval': args.long, 'e': args.endDate, 'd': args.duration, 't': 'TRADES', 'r': useRth, 'f': 2, 'k': False}
-dataStore, dataStream = detector.setupData(ibc, wc, conf, backtestArgs)
+backtestArgs = {'watchCount': args.watchCount, 'shortInterval': args.shortEMA, 'longInterval': args.longEMA, 'e': args.endDate, 'd': args.duration, 't': 'MIDPOINT', 'r': useRth, 'f': 2, 'k': False}
+dataStore, dataStream = detector.setupData(wc, conf, backtestArgs)
 
 newBars = None
 if conf.detector == 'threeBarPattern':
@@ -77,25 +77,27 @@ if args.single:
     totals = backtest.backtest(wc, dataStream, dataStore, conf)
     print(modTotals(totals))
     sys.exit(0)
-for p in [1, 5, 10, 14, 30, 60]:
-        for lI in [10, 20, 40, 60, 120, 200]:
-            for sI in [5, 15, 30, 45, 50]:
-                if sI > lI:
-                    continue
-                for w in [5, 15, 30, 60]:
-                    for sT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25]:
-                        for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
-                            ID = 'lI:'+str(lI)+', sI:'+str(sI)+', w:'+str(w)+', sT:'+str(sT)+', pT:'+str(pT)
-                            logging.error('running %s', ID)
-                            conf.profitTarget = pT
-                            conf.stopTarget = sT
-                            dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
-                            dataStore.backTest = True
-                            dataStore.byPeriod = p
-                            dataStore.calcInitEMAs(dataStream)
-                            totals = modTotals( backtest.backtest(wc, dataStream, dataStore, conf) )
-                            r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
-                            print(str(ID) + ' ' + str(p) + ':' + str(totals['gl']))
+#for p in [1, 5, 10, 14, 30, 60]:
+for p in [1, 5, 10]:
+    for lI in [20, 40]:
+        for sI in [5, 15]:
+            if sI > lI:
+                continue
+            for w in [5, 15]:
+                for sT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25]:
+                    for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
+                        ID = 'lI:'+str(lI)+', sI:'+str(sI)+', w:'+str(w)+', sT:'+str(sT)+', pT:'+str(pT)+', pD:'+str(p)
+                        #logging.error('running %s', ID)
+                        conf.profitTarget = pT
+                        conf.stopTarget = sT
+                        dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
+                        dataStore.backTest = True
+                        dataStore.byPeriod = p
+                        dataStore.calcInitEMAs(dataStream)
+                        totals = modTotals( backtest.backtest(wc, dataStream, dataStore, conf) )
+                        r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
+                        if totals['gl'] > 0:
+                            logging.error(str(ID) + '; gl:' + str(totals['gl']))
 
 #backtest.backtest(wc, dataStream, dataStore, conf)
 ## are any positions left open?
