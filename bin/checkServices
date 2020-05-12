@@ -16,8 +16,9 @@ with open('/home/adam/ibCreds/sendgrid.key', 'r') as f:
 
 def sendEmail(serviceName, errorString):
     import sendgrid
+    import socket
     addr = 'adam.morley.mobile@gmail.com'
-    subject = 'CRITICAL from ' + serviceName
+    subject = 'CRITICAL on ' . socket.gethostname() . ' from ' + serviceName
     content = sendgrid.helpers.mail.Content('text/plain', errorString)
     message = sendgrid.helpers.mail.Mail(sendgrid.helpers.mail.Email(addr), sendgrid.helpers.mail.To(addr), subject, content)
     try:
