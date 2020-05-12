@@ -225,25 +225,25 @@ class EMA:
     #   if the current interval's price drops below the long ema, do not enter (weak momo)
     #   if the market opened less than 15 minutes ago, we're just going to ignore signals
     def checkForBuy(self, dataStream, sleepFunc=None):
-        logging.info('waiting for data to check for buy...')
         if not self.backTest:
             sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
         if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to waiting
-            logging.warn('midpoint fell below long ema, stopping watch')
+            logging.info('midpoint fell below long ema, stopping watch')
             self.areWatching = False
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
-            logging.warn('state just changed to uncrossed, stopping watch')
+            logging.info('state just changed to uncrossed, stopping watch')
             self.areWatching = False
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
-            logging.warn('state just changed to crossed, starting to watch')
+            logging.info('state just changed to crossed, starting to watch')
             self.areWatching = True
             self.countOfCrossedIntervals = 0
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
+        logging.warn('updated EMAs short: {}/long: {} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False

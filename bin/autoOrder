@@ -99,7 +99,7 @@ while now() < startTime + datetime.timedelta(hours=20):
         logging.warn('completed total number of trades {}/{}, exiting'.format(totalTrades, conf.totalTrades))
         break
     elif not date.isMarketOpen( date.parseOpenHours(wc.details) ):
-        logging.warn('market closed, waiting to open')
+        logging.warn('market closed, waiting for open')
         ibc.sleep(60 * 5)
         continue
 
