@@ -247,6 +247,5 @@ class EMA:
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
-            if self.short - self.long > 1.25: # want some distance 
-                logging.warn('returning a buy {}'.format(self))
-                return midpoint # buyPrice
+            logging.warn('returning a buy {}'.format(self))
+            return midpoint # buyPrice
