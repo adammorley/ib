@@ -6,7 +6,7 @@ symbol: ES
 localSymbol: ESM0
 percents: false
 profitTarget: 3
-stopTarget: 7
+stopTarget: 1
 dayOrder: false
 trail: false
 byPrice: false

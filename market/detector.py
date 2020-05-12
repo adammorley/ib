@@ -47,13 +47,14 @@ def setupData(wc, conf, backtestArgs=None):
     if conf.detector == 'threeBarPattern':
         dataStore = barSet = bars.BarSet()
     if backtestArgs is not None:
+        logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
         if conf.detector == 'emaCrossover':
             dataStore = EMA(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
             dataStore.backTest = True
-            logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
-        dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
-        if conf.detector == 'emaCrossover':
+            dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
             dataStore.calcInitEMAs(dataStream)
+        else:
+            dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=backtestArgs['longInterval'], e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
     elif conf.detector == 'threeBarPattern':
         dataStream = wc.getTicker()
     elif conf.detector == 'emaCrossover':
@@ -245,7 +246,7 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        logging.warn('updated EMAs short: {.3f}/long: {.3f} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
+        logging.warn('updated EMAs short: {:.3f}/long: {:.3f} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False

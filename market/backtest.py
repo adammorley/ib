@@ -23,118 +23,12 @@ def makeBar(histBar):
 def getNextBar(newBars, index):
     return newBars[index]
 
-def processScriptOutput():
-    ds = {}
-    with open('../esData', 'r') as f:
-        while True:
-            s = f.readline()
-            if not s:
-                break
-            kv = s.split()
-            vh = kv[1].split(':')
-            try:
-                ds[kv[0]][vh[0]] = vh[1]
-            except KeyError:
-                ds[kv[0]] = {}
-                ds[kv[0]][vh[0]] = vh[1]
-    one={}
-    five={}
-    ten={}
-    fourteen={}
-    thirty={}
-    sixty={}
-    total = {}
-    for k, v in ds.items():
-        for d, gl in v.items():
-            d = int(d)
-            gl = float(gl)
-            if d == 1:
-                one[k] = gl
-            elif d == 5:
-                five[k] = gl
-            elif d == 10:
-                ten[k] = gl
-            elif d == 14:
-                fourteen[k] = gl
-            elif d == 30:
-                thirty[k] = gl
-            elif d == 60:
-                sixty[k] = gl
-    return one, five, ten, fourteen, thirty, sixty
-
-# send output of processscriptoutput
-# inFromOut is output of script outputthing above
-def findUnion(inFromOut):
-    best = set()
-    for arr in inFromOut:
-        i = 0
-        for k in sorted(arr, key=arr.get, reverse=True):
-            i += 1
-            if i > 30:
-                break
-            best.add(k)
-    return best
-
-# regex is like 'lI:40,sI:15,w:15,sT:5,pT:7'
-def filterBest(regex, inFromOut):
-    #r = re.compile('lI:40,sI:15,w:(5|15),sT.*')
-    r = re.compile(regex)
-    for arr in inFromOut:
-        print('mark')
-        for k in sorted(arr, key=arr.get, reverse=True):
-            m = r.match(k)
-            if m:
-                print(k, arr[k])
-
-def feedFromUnionToPositiveKeyFinder(best, mult, inFromOut):
-    d = {}
-    for k in best:
-        r = getFromIn(k, mult, inFromOut)
-        if r:
-            # FIXME: make -1
-            for i in range(len(inFromOut)-1, 0, -1):
-                try:
-                    t = None
-                    t = inFromOut[i][k]
-                    if t is not None:
-                        d[k] = t
-                        break
-                except KeyError:
-                    zz =5
-    return d
-
-def getBestValue(inFromOut):
-    best = findUnion(inFromOut)
-    ds = []
-    for i in [1.5, 2, 2.5, 3]:
-        print('at multiplier ', i)
-        d = feedFromUnionToPositiveKeyFinder(best, i, inFromOut)
-        for k, v in d.items():
-            if v > 20000:
-                print(k, v)
-        print('')
-
-def getFromIn(key, mult, inFromOut):
-    v = []
-    for i in inFromOut:
-        try:
-            v.append(i[key])
-        except KeyError:
-            zzz = 5
-    p = v[0]
-    f = False
-    for j in v:
-        if j < 1:
-            f = False
-            break
-        elif j > mult * p:
-            f = True
-        else:
-            f = False
-        p = j
-    if f:
-        return key
-    return None
+def updateBarSet(newBars, i, dataStore):
+    if i > 3:
+        dataStore.first = dataStore.second
+        dataStore.second = dataStore.third
+    dataStore.third = getNextBar(newBars, i)
+    return dataStore
 
 def backtest(wc, dataStream, dataStore, conf):
     totals = {'gl': 0, 'tf': 0, 'mf': 0}
@@ -278,3 +172,125 @@ def checkStopProfit(position, bar):
     if amount is not None:
         amount = amount * position.buyOrder.totalQuantity
     return amount, executed
+
+
+
+
+
+
+
+########################DRAGONS!
+def processScriptOutput():
+    ds = {}
+    with open('../esData', 'r') as f:
+        while True:
+            s = f.readline()
+            if not s:
+                break
+            kv = s.split()
+            vh = kv[1].split(':')
+            try:
+                ds[kv[0]][vh[0]] = vh[1]
+            except KeyError:
+                ds[kv[0]] = {}
+                ds[kv[0]][vh[0]] = vh[1]
+    one={}
+    five={}
+    ten={}
+    fourteen={}
+    thirty={}
+    sixty={}
+    total = {}
+    for k, v in ds.items():
+        for d, gl in v.items():
+            d = int(d)
+            gl = float(gl)
+            if d == 1:
+                one[k] = gl
+            elif d == 5:
+                five[k] = gl
+            elif d == 10:
+                ten[k] = gl
+            elif d == 14:
+                fourteen[k] = gl
+            elif d == 30:
+                thirty[k] = gl
+            elif d == 60:
+                sixty[k] = gl
+    return one, five, ten, fourteen, thirty, sixty
+
+# send output of processscriptoutput
+# inFromOut is output of script outputthing above
+def findUnion(inFromOut):
+    best = set()
+    for arr in inFromOut:
+        i = 0
+        for k in sorted(arr, key=arr.get, reverse=True):
+            i += 1
+            if i > 30:
+                break
+            best.add(k)
+    return best
+
+# regex is like 'lI:40,sI:15,w:15,sT:5,pT:7'
+def filterBest(regex, inFromOut):
+    #r = re.compile('lI:40,sI:15,w:(5|15),sT.*')
+    r = re.compile(regex)
+    for arr in inFromOut:
+        print('mark')
+        for k in sorted(arr, key=arr.get, reverse=True):
+            m = r.match(k)
+            if m:
+                print(k, arr[k])
+
+def feedFromUnionToPositiveKeyFinder(best, mult, inFromOut):
+    d = {}
+    for k in best:
+        r = getFromIn(k, mult, inFromOut)
+        if r:
+            # FIXME: make -1
+            for i in range(len(inFromOut)-1, 0, -1):
+                try:
+                    t = None
+                    t = inFromOut[i][k]
+                    if t is not None:
+                        d[k] = t
+                        break
+                except KeyError:
+                    zz =5
+    return d
+
+def getBestValue(inFromOut):
+    best = findUnion(inFromOut)
+    ds = []
+    for i in [1.5, 2, 2.5, 3]:
+        print('at multiplier ', i)
+        d = feedFromUnionToPositiveKeyFinder(best, i, inFromOut)
+        for k, v in d.items():
+            if v > 20000:
+                print(k, v)
+        print('')
+
+def getFromIn(key, mult, inFromOut):
+    v = []
+    for i in inFromOut:
+        try:
+            v.append(i[key])
+        except KeyError:
+            zzz = 5
+    p = v[0]
+    f = False
+    for j in v:
+        if j < 1:
+            f = False
+            break
+        elif j > mult * p:
+            f = True
+        else:
+            f = False
+        p = j
+    if f:
+        return key
+    return None
+
+

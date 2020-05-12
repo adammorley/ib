@@ -38,13 +38,6 @@ parser.add_argument('--profitTarget', default=3, type=float)
 parser.add_argument('--stopTarget', default=7, type=float)
 args = parser.parse_args()
 
-def updateBarSet(newBars, i, dataStore):
-    if i > 3:
-        dataStore.first = dataStore.second
-        dataStore.second = dataStore.third
-    dataStore.third = backtest.getNextBar(newBars, i)
-    return dataStore
-
 def modTotals(totals):
     if conf.symbol == 'ES':
         totals['gl']=totals['gl']*50
@@ -79,21 +72,29 @@ if args.single:
     sys.exit(0)
 #for p in [1, 5, 10, 14, 30, 60]:
 for p in [1, 5, 10]:
-    for lI in [20, 40]:
-        for sI in [5, 15]:
+    #for lI in [20, 40, 60, 120, 200]:
+    for lI in [20]:
+        #for sI in [5, 15, 30, 50]:
+        for sI in [5]:
             if sI > lI:
                 continue
-            for w in [5, 15]:
-                for sT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25]:
-                    for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
+            #for w in [5, 15, 30]:
+            for w in [5]:
+                #for sT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25]:
+                for sT in [1, 2]:
+                    #for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
+                    for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
                         ID = 'lI:'+str(lI)+', sI:'+str(sI)+', w:'+str(w)+', sT:'+str(sT)+', pT:'+str(pT)+', pD:'+str(p)
                         #logging.error('running %s', ID)
                         conf.profitTarget = pT
                         conf.stopTarget = sT
-                        dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
-                        dataStore.backTest = True
-                        dataStore.byPeriod = p
-                        dataStore.calcInitEMAs(dataStream)
+                        if conf.detector == 'emaCrossover':
+                            dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
+                            dataStore.backTest = True
+                            dataStore.byPeriod = p
+                            dataStore.calcInitEMAs(dataStream)
+                        else:
+
                         totals = modTotals( backtest.backtest(wc, dataStream, dataStore, conf) )
                         r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
                         if totals['gl'] > 0:
