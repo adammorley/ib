@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-
-import datetime
 import logging
 import pytz
 import signal
 import sys
-import time
+from datetime import timedelta
 
 sys.path.append(r'/home/adam/ib')
 from market import account
@@ -97,7 +95,7 @@ portfolioCheck = date.nowInUtc()
 # what we really want is to extract the "I detected a reason to buy contract n at bar y with reuqirements z"
 # and add the es one as well.
 logging.warn('running trade loop for %s...', wc.symbol)
-while date.nowInUtc() < startTime + datetime.timedelta(hours=20):
+while date.nowInUtc() < startTime + timedelta(hours=20):
     if totalTrades >= conf.totalTrades:
         logging.warn('completed total number of trades {}/{}, exiting'.format(totalTrades, conf.totalTrades))
         break
@@ -105,12 +103,12 @@ while date.nowInUtc() < startTime + datetime.timedelta(hours=20):
         logging.warn('market closed, waiting for open')
         ibc.sleep(60 * 5)
         continue
-    elif not date.isMarketOpen(date.parseOpenHours(wc.details), date.nowInUtc() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
+    elif not date.isMarketOpen(date.parseOpenHours(wc.details), date.nowInUtc() + timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
         sleepMins = (date.marketNextCloseTime(date.parseOpenHours(wc.details)) - date.nowInUtc()).total_seconds() /60
         waitAndUpdateEMAs(ibc, sleepMins, dataStore, dataStream)
         continue
-    elif date.marketOpenedLessThan(date.parseOpenHours(wc.details), datetime.timedelta(minutes=conf.greyzone) ):
+    elif date.marketOpenedLessThan(date.parseOpenHours(wc.details), timedelta(minutes=conf.greyzone) ):
         logging.warn('market just opened, waiting')
         minutesOpen = (date.nowInUtc() - date.marketOpenedAt(date.parseOpenHours(wc.details))).total_seconds() /60
         waitAndUpdateEMAs(ibc, (conf.greyzone-minutesOpen), dataStore, dataStream)
@@ -150,7 +148,7 @@ while date.nowInUtc() < startTime + datetime.timedelta(hours=20):
             totalTrades += 1
             logging.debug(trades)
 
-    if date.nowInUtc() > portfolioCheck + datetime.timedelta(minutes=30):
+    if date.nowInUtc() > portfolioCheck + timedelta(minutes=30):
         portfolioCheck = date.nowInUtc()
         outputIfHolding(wc)
 
