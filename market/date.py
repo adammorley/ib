@@ -7,6 +7,9 @@ from datetimerange import DateTimeRange # https://pypi.org/project/DateTimeRange
 
 from market import fatal
 
+def now():
+    return datetime.utcnow().astimezone(pytz.utc)
+
 # returns datetimerange of open hours for next month or so
 def parseOpenHours(cd):
     return parseTradingHours(cd.tradingHours, parseTimezone(cd.timeZoneId) )
@@ -59,34 +62,51 @@ def createIntersectedRanges(r0, r1):
     return intersect
 
 def getNextOpenTime(r):
-    d = datetime.utcnow().astimezone(pytz.utc)
-    d = d + timedelta(hours=1)
-    d = d.replace(minute=0, second=0, microsecond=0)
+    dt = now()
+    dt = dt + timedelta(hours=1)
+    dt = dt.replace(minute=0, second=0, microsecond=0)
     for r_ in r:
-        t = d
         n = 0
-        while t not in r_ and n < 384: # ~8 days
+        while dt not in r_ and n < 384: # ~8 days
             n += 1
-            t = t + timedelta(minutes=30)
-        if t in r_:
-            return t
+            dt = dt + timedelta(minutes=30)
+        if dt in r_:
+            return dt
     return None
 
 def isMarketOpen(r, dt=None):
     if dt is None:
-        dt = datetime.utcnow().astimezone(pytz.utc)
+        dt = now()
     for r_ in r:
         if dt in r_:
             return True
     return False
 
 def marketOpenedLessThan(r, td):
-    now = datetime.utcnow().astimezone(pytz.utc)
+    dt = now()
     if len(r) < 2:
         fatal.errorAndExit('seems like this might not be a range')
     for r_ in r:
-        if now not in r_:
+        if dt not in r_:
             continue
-        elif now - td not in r_:
+        elif dt - td not in r_:
             return True
     return False
+
+def marketNextCloseTime(r):
+    dt = now()
+    if len(r) < 2:
+        fatal.errorAndExit('seem like this might not be a range')
+    for r_ in r:
+        if dt in r_:
+            return r_.end_datetime
+    fatal.errorAndExit('cannot find next close time {} {}'.format(dt, r))
+
+def marketOpenedAt(r):
+    dt = now()
+    if len(r) < 2:
+        fatal.errorAndExit('seem like this might not be a range')
+    for r_ in r:
+        if dt in r_:
+            return r_.start_datetime
+    fatal.errorAndExit('cannot find market open time {} {}'.format(dt, r))

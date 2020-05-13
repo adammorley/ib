@@ -37,7 +37,6 @@ def backtest(wc, dataStream, dataStore, conf, period):
     startIndex = None
     # which data point in the dataStream/bar set to evaluate on this round about buy or not
     if conf.detector == 'threeBarPattern':
-        # FIXME: NEED TO FIND OUT IF AUTO ORDER USES THE INDEX, IF SO, STICK IT INTO THE DATA STORE AND REUSE HERE
         startIndex, dataStore = setupThreeBar(dataStream, period)
     elif conf.detector == 'emaCrossover':
         # FIXME: might be a bug here
