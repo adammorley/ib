@@ -28,7 +28,7 @@ parser.add_argument('--info', action='store_true', default=None)
 parser.add_argument('--error', action='store_true', default=None)
 parser.add_argument('--conf', type=str, required=True)
 
-parser.add_argument("--duration", default=30, type=int)
+parser.add_argument("--duration", default=10, type=int)
 parser.add_argument("--endDate", default='', type=str)
 
 parser.add_argument('--shortEMA', default=15, type=int)
@@ -65,7 +65,7 @@ if args.single:
     print(modTotals(totals))
     sys.exit(0)
 #for p in [1, 5, 10, 14, 30, 60]:
-for p in [1, 5, 10, 14, 30]:
+for p in [1, 5, 7]:
     #for lI in [20, 40, 60, 120, 200]:
     for lI in [20]:
         #for sI in [5, 15, 30, 50]:
@@ -91,7 +91,7 @@ for p in [1, 5, 10, 14, 30]:
                         r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
                         if totals['gl'] > 0:
                             er = int(totals['gl']/totals['op'])
-                            logging.error(str(ID) + '; gl:' + str(totals['gl']) + ', op:'+str(totals['op']) + ', rat:'+str(er))
+                            logging.error(str(ID)+'; gl:'+str(totals['gl'])+', op:'+str(totals['op'])+', er:'+str(er) +', lo:'+str(totals['lo']))
 
 #backtest.backtest(wc, dataStream, dataStore, conf)
 ## are any positions left open?

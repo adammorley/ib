@@ -110,3 +110,9 @@ def marketOpenedAt(r):
         if dt in r_:
             return r_.start_datetime
     fatal.errorAndExit('cannot find market open time {} {}'.format(dt, r))
+
+def ibMaintWindow():
+    est = pytz.timezone('America/New_York')
+    start = est.localize(datetime.datetime.now().replace(hour=23, minute=45, second=0, microsecond=0)).astimezone(pytz.utc)
+    end = est.localize((now() + datetime.timedelta(days=1)).replace(hour=0, minute=45, second=0, microsecond=0)).astimezone(pytz.utc)
+    return now() in DateTimeRange(start, end)
