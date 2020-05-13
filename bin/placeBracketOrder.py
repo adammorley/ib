@@ -26,12 +26,12 @@ ibc = connect.connect(conf, args.debug)
 
 wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
-buyPrice = args.limitPrice
-if buyPrice < 0: # fetch from market
-    buyPrice = args.bidIncrement + wc.marketPrice()
+entryPrice = args.limitPrice
+if entryPrice < 0: # fetch from market
+    entryPrice = args.bidIncrement + wc.marketPrice()
 
 from market.order import OrderDetails
-orderDetails = OrderDetails(buyPrice, conf, wc)
+orderDetails = OrderDetails(entryPrice, conf, wc)
 logging.warn('created an order for contract %s %s', wc.contract, orderDetails)
 
 orders = order.CreateBracketOrder(orderDetails, conf.account)

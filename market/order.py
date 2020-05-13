@@ -6,12 +6,12 @@ from market import fatal
 from market.contract import wContract
 from market.config import Config
 class OrderDetails:
-    buyPrice: float = None # converts to Decimal during order creation
+    entryPrice: float = None # converts to Decimal during order creation
     config: Config
     wContract: wContract
 
-    def __init__(self, buyPrice, config, wContract):
-        self.buyPrice = buyPrice
+    def __init__(self, entryPrice, config, wContract):
+        self.entryPrice = entryPrice
         self.config = config
         self.wContract = wContract
 
@@ -25,8 +25,8 @@ from ib_insync.order import Order
 # order of attributes matters so callers can iterate
 # sucks but need transmit=False on the first elements
 class BracketOrder:
-    buyOrder: Order
-    profitOrder: Order
+    entryOrder: Order
+    exitOrder: Order
     dayOrder: Order
     stopOrder: Order
     def __repr__(self):
@@ -65,28 +65,28 @@ def roundToTickSize(p, inc):
 def Round(p, inc):
     return convertToTwoDecimalsAsFloat( roundToTickSize(p, inc) )
 
-def calculateProfitPrice(od):
+def calculateProfitPrice(od, entryAction=None):
     if od.config.percents:
-        return od.buyPrice * (100.0 + od.config.profitPercent)/100.0
+        return od.entryPrice * (100.0 + od.config.profitPercent)/100.0
     else:
-        return od.buyPrice + od.config.profitTarget
+        return od.entryPrice + od.config.profitTarget
 
-def calculateDayPrice(od):
+def calculateDayPrice(od, entryAction=None):
     if od.config.percents:
-        return od.buyPrice * (100.0 + od.config.dayPercent)/100.0
+        return od.entryPrice * (100.0 + od.config.dayPercent)/100.0
     else:
-        return od.buyPrice + od.config.dayTarget
+        return od.entryPrice + od.config.dayTarget
 
-def calculateStopPrice(od):
+def calculateStopPrice(od, entryAction=None):
     if od.config.percents:
-        return od.buyPrice * (100.0 - od.config.stopPercent)/100.0
+        return od.entryPrice * (100.0 - od.config.stopPercent)/100.0
     else:
-        return od.buyPrice - od.config.stopTarget
+        return od.entryPrice - od.config.stopTarget
 
 # drops decimal, only whole units
 def calculateQty(od):
     if od.config.byPrice:
-        return int( od.config.dollarAmt / od.buyPrice )
+        return int( od.config.dollarAmt / od.entryPrice )
     else:
         return od.config.qty
 
@@ -96,25 +96,25 @@ def CreateBracketOrder(orderDetails, account=None):
     qty = calculateQty(orderDetails)
     orders = BracketOrder()
 
-    orders.buyOrder = Order()
-    orders.buyOrder.account = account
-    orders.buyOrder.transmit = False
-    orders.buyOrder.action = 'BUY'
-    orders.buyOrder.totalQuantity = qty
-    orders.buyOrder.orderType = 'LMT'
-    orders.buyOrder.lmtPrice = Round(orderDetails.buyPrice, orderDetails.wContract.priceIncrement)
-    orders.buyOrder.tif = 'DAY'
+    orders.entryOrder = Order()
+    orders.entryOrder.account = account
+    orders.entryOrder.transmit = False
+    orders.entryOrder.action = 'BUY'
+    orders.entryOrder.totalQuantity = qty
+    orders.entryOrder.orderType = 'LMT'
+    orders.entryOrder.lmtPrice = Round(orderDetails.entryPrice, orderDetails.wContract.priceIncrement)
+    orders.entryOrder.tif = 'DAY'
 
-    profitPrice = calculateProfitPrice(orderDetails)
-    orders.profitOrder = Order()
-    orders.profitOrder.account = account
-    orders.profitOrder.transmit = False
-    orders.profitOrder.action = 'SELL'
-    orders.profitOrder.totalQuantity = qty
-    orders.profitOrder.orderType = 'LMT'
-    orders.profitOrder.lmtPrice = Round(profitPrice, orderDetails.wContract.priceIncrement)
-    orders.profitOrder.tif = 'GTC'
-    orders.profitOrder.outsideRth = orderDetails.config.sellOutsideRth
+    exitPrice = calculateProfitPrice(orderDetails)
+    orders.exitOrder = Order()
+    orders.exitOrder.account = account
+    orders.exitOrder.transmit = False
+    orders.exitOrder.action = 'SELL'
+    orders.exitOrder.totalQuantity = qty
+    orders.exitOrder.orderType = 'LMT'
+    orders.exitOrder.lmtPrice = Round(exitPrice, orderDetails.wContract.priceIncrement)
+    orders.exitOrder.tif = 'GTC'
+    orders.exitOrder.outsideRth = orderDetails.config.sellOutsideRth
 
     if orderDetails.config.dayOrder:
         dayPrice = calculateDayPrice(orderDetails)
@@ -147,7 +147,7 @@ def CreateBracketOrder(orderDetails, account=None):
         orders.stopOrder.orderType = 'STP'
         orders.stopOrder.auxPrice = Round(stopPrice, orderDetails.wContract.priceIncrement)
 
-    orderDetails.buyPrice = orders.buyOrder.lmtPrice # for debugging clarity
+    orderDetails.entryPrice = orders.entryOrder.lmtPrice # for debugging clarity
     logging.warn('created bracket orders: %s', orders)
     return orders
 
@@ -165,12 +165,12 @@ def adequateFunds(orderDetails, orders):
     qty = calculateQty(orderDetails)
     availableFunds = account.availableFunds(orderDetails.wContract.ibClient, orderDetails.config.account)
     buyingPower = account.buyingPower(orderDetails.wContract.ibClient, orderDetails.config.account)
-    lhs = orderDetails.buyPrice * qty
+    lhs = orderDetails.entryPrice * qty
     af_rhs = availableFunds - orderDetails.config.bufferAmt
     bp_rhs = buyingPower - orderDetails.config.bufferAmt
     os = None
     if orderDetails.wContract.contract.secType == 'FUT':
-        wio = whatIfOrder(orders.buyOrder)
+        wio = whatIfOrder(orders.entryOrder)
         os = orderDetails.wContract.ibClient.whatIfOrder(orderDetails.wContract.contract, wio)
         if not os.initMarginAfter or not isinstance(os.initMarginAfter, str):
             fatal.errorAndExit('got back invalid format: {} {} {}'.format(os, orderDetails, order))

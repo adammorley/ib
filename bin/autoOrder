@@ -114,19 +114,19 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
         waitAndUpdateEMAs(ibc, (conf.greyzone-minutesOpen), dataStore, dataStream)
         continue
 
-    buyPrice = None
+    entryPrice = None
     if conf.detector == 'threeBarPattern':
-        buyPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
+        entryPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
     elif conf.detector == 'emaCrossover':
-        buyPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
+        entryPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
 
     orderDetails = None
-    if buyPrice is not None:
+    if entryPrice is not None:
         try:
-            orderDetails = order.OrderDetails(buyPrice, conf, wc)
+            orderDetails = order.OrderDetails(entryPrice, conf, wc)
         except FloatingPointError as e:
             errorCount += 1
-            logging.error('got an NaN during order creation: {} {} {}'.format(e, buyPrice, orderDetails))
+            logging.error('got an NaN during order creation: {} {} {}'.format(e, entryPrice, orderDetails))
             orderDetails = None
 
     if orderDetails is not None:

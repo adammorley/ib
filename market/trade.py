@@ -7,11 +7,11 @@ from market import rand
 
 def PlaceBracketTrade(orders, orderDetails):
     #oca=[]
-    orders.buyOrder.orderId = orderDetails.wContract.ibClient.client.getReqId()
+    orders.entryOrder.orderId = orderDetails.wContract.ibClient.client.getReqId()
     for orderType, order in orders.__dict__.items():
-        if orderType != 'buyOrder':
+        if orderType != 'entryOrder':
             order.orderId = orderDetails.wContract.ibClient.client.getReqId()
-            order.parentId = orders.buyOrder.orderId
+            order.parentId = orders.entryOrder.orderId
             #oca.append(order)
 
     #ocaR = ibc.oneCancelsAll(orders=oca, ocaGroup=rand.String(), ocaType=1)
@@ -21,7 +21,7 @@ def PlaceBracketTrade(orders, orderDetails):
     bos = None
     for orderType, order in orders.__dict__.items():
         t = orderDetails.wContract.ibClient.placeOrder(orderDetails.wContract.contract, order)
-        if orderType == 'buyOrder':
+        if orderType == 'entryOrder':
             bos = t.orderStatus
         trades.append(t)
     orderDetails.wContract.ibClient.sleep(0)

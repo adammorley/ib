@@ -8,7 +8,7 @@ from svc import paths
 
 def serviceDir(conf):
     daemonName = sys.argv[0]
-    return paths.serviceDirs() + daemonName + '_' + conf.symbol
+    return paths.serviceDirs() + conf.localSymbol
 
 def touchDownFile(conf):
     pathlib.Path(serviceDir(conf) + paths.downFilename()).touch()
@@ -18,7 +18,7 @@ def touchFatalFile(conf):
 
 def fatal(conf, msg):
     logging.critical(msg)
-    touchFataFile(conf)
+    touchFatalFile(conf)
     touchDownFile(conf)
     sys.exit(1)
 

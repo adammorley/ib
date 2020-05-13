@@ -55,16 +55,16 @@ class BarSet:
         return ','.join(pieces)
 
     def analyze(self):
-        buyPrice = None
+        entryPrice = None
         if self.first.color == 'X' or self.second.color == 'X' or self.third.color == 'X':
             logging.debug('got a partial bar')
         #FIXME: the bar size testing seems to have a large impact on not entering, to the detriment of the return
         elif not self.first.color == 'G' and not self.second.color == 'R' and not self.third.color == 'G' and not self.second.barSize < 0.3 * self.first.barSize and not self.second.barSize < 0.5 * self.third.barSize and not self.third.barSize > self.second.barSize:
-            buyPrice = None
+            entryPrice = None
         else:
-            buyPrice = self.third.close
-            if math.isnan(buyPrice):
-                fatal.errorAndExit('got floating point which is NaN {} {}'.format(buyPrice, self.third))
+            entryPrice = self.third.close
+            if math.isnan(entryPrice):
+                fatal.errorAndExit('got floating point which is NaN {} {}'.format(entryPrice, self.third))
         
-            logging.info('found a potential buy point: %d', buyPrice)
-        return buyPrice
+            logging.info('found a potential entry point: %d', entryPrice)
+        return entryPrice
