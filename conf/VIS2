@@ -12,5 +12,5 @@ byPrice: false
 qty: 1
 bufferAmt: 30000
 openPositions: 1
-buyOutsideRth: false
-sellOutsideRth: true
+enterOutsideRth: false
+exitOutsideRth: true

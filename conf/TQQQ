@@ -10,6 +10,6 @@ trail: false
 byPrice: true
 dollarAmt: 5000
 openPositions: 2
-buyOutsideRth: false
-sellOutsideRth: true
+enterOutsideRth: false
+exitOutsideRth: true
 detector: threeBarPattern

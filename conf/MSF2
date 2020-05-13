@@ -10,5 +10,5 @@ trail: true
 byPrice: true
 dollarAmt: 5000
 openPositions: 1
-buyOutsideRth: false
-sellOutsideRth: true
+enterOutsideRth: false
+exitOutsideRth: true

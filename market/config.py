@@ -36,8 +36,8 @@ class Config:
     qty: int
     openPositions: int
     totalTrades: int
-    buyOutsideRth: bool
-    sellOutsideRth: bool
+    enterOutsideRth: bool
+    exitOutsideRth: bool
     greyzone: int # number of minutes before market close to not place new trades
     byPrice: bool
     dollarAmt: float
@@ -88,8 +88,8 @@ def ProcessConfig(conf, detectorOn=None):
     config.trail = conf['trail']
     config.openPositions = conf['openPositions']
     config.totalTrades = conf['totalTrades']
-    config.buyOutsideRth = conf['buyOutsideRth']
-    config.sellOutsideRth = conf['sellOutsideRth']
+    config.enterOutsideRth = conf['enterOutsideRth']
+    config.exitOutsideRth = conf['exitOutsideRth']
 
     if detectorOn:
         config.detector = conf['detector']

@@ -53,7 +53,7 @@ conf = config.overrideConfig(conf, args.profitTarget, args.stopTarget, args.shor
 
 wc = contract.wContract(ibc, conf.symbol, conf.localSymbol)
 
-useRth = False if conf.buyOutsideRth else True
+useRth = False if conf.enterOutsideRth else True
 backtestArgs = {'watchCount': args.watchCount, 'shortInterval': args.shortEMA, 'longInterval': args.longEMA, 'e': args.endDate, 'd': args.duration, 't': 'MIDPOINT', 'r': useRth, 'f': 2, 'k': False}
 dataStore, dataStream = detector.setupData(wc, conf, backtestArgs)
 
@@ -98,7 +98,7 @@ for p in [1, 5, 7]:
 ##logging.warn('checking for any leftover positions')
 ##lastClose = dataStream[len(dataStream)-1].close
 ##for position in positions:
-#    #totals['gl'] += lastClose - position.buyOrder.lmtPrice   
+#    #totals['gl'] += lastClose - position.entryOrder.lmtPrice   
 connect.close(ibc)
 
 sys.exit(0)

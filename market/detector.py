@@ -71,7 +71,7 @@ def setupData(wc, conf, backtestArgs=None):
         dataStream = wc.getTicker()
         wc.ibClient.sleep(0)
 
-        useRth = False if conf.buyOutsideRth else True
+        useRth = False if conf.enterOutsideRth else True
         histData = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
         if len(histData) < dataStore.longInterval *2:
             fatal.fatal(conf, 'did not get back the right amount of data from historical data call, perhaps broken?')

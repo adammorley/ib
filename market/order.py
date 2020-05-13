@@ -114,7 +114,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.exitOrder.orderType = 'LMT'
     orders.exitOrder.lmtPrice = Round(exitPrice, orderDetails.wContract.priceIncrement)
     orders.exitOrder.tif = 'GTC'
-    orders.exitOrder.outsideRth = orderDetails.config.sellOutsideRth
+    orders.exitOrder.outsideRth = orderDetails.config.exitOutsideRth
 
     if orderDetails.config.dayOrder:
         dayPrice = calculateDayPrice(orderDetails)
@@ -126,7 +126,7 @@ def CreateBracketOrder(orderDetails, account=None):
         orders.dayOrder.orderType = 'LOC'
         orders.dayOrder.lmtPrice = Round(dayPrice, orderDetails.wContract.priceIncrement)
         orders.dayOrder.tif = 'DAY'
-        orders.dayOrder.outsideRth = orderDetails.config.sellOutsideRth
+        orders.dayOrder.outsideRth = orderDetails.config.exitOutsideRth
 
     orders.stopOrder = Order()
     orders.stopOrder.account = account
@@ -134,7 +134,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.stopOrder.action = 'SELL'
     orders.stopOrder.totalQuantity = qty
     orders.stopOrder.tif = 'GTC'
-    orders.stopOrder.outsideRth = orderDetails.config.sellOutsideRth
+    orders.stopOrder.outsideRth = orderDetails.config.exitOutsideRth
     if orderDetails.config.trail:
         orders.stopOrder.orderType = 'TRAIL'
         if orderDetails.config.stopPercent:
