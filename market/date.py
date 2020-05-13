@@ -7,7 +7,7 @@ from datetimerange import DateTimeRange # https://pypi.org/project/DateTimeRange
 
 from market import fatal
 
-def now():
+def nowInUtc():
     return datetime.utcnow().astimezone(pytz.utc)
 
 # returns datetimerange of open hours for next month or so
@@ -62,7 +62,7 @@ def createIntersectedRanges(r0, r1):
     return intersect
 
 def getNextOpenTime(r):
-    dt = now()
+    dt = nowInUtc()
     dt = dt + timedelta(hours=1)
     dt = dt.replace(minute=0, second=0, microsecond=0)
     for r_ in r:
@@ -76,14 +76,14 @@ def getNextOpenTime(r):
 
 def isMarketOpen(r, dt=None):
     if dt is None:
-        dt = now()
+        dt = nowInUtc()
     for r_ in r:
         if dt in r_:
             return True
     return False
 
 def marketOpenedLessThan(r, td):
-    dt = now()
+    dt = nowInUtc()
     if len(r) < 2:
         fatal.errorAndExit('seems like this might not be a range')
     for r_ in r:
@@ -94,7 +94,7 @@ def marketOpenedLessThan(r, td):
     return False
 
 def marketNextCloseTime(r):
-    dt = now()
+    dt = nowInUtc()
     if len(r) < 2:
         fatal.errorAndExit('seem like this might not be a range')
     for r_ in r:
@@ -103,7 +103,7 @@ def marketNextCloseTime(r):
     fatal.errorAndExit('cannot find next close time {} {}'.format(dt, r))
 
 def marketOpenedAt(r):
-    dt = now()
+    dt = nowInUtc()
     if len(r) < 2:
         fatal.errorAndExit('seem like this might not be a range')
     for r_ in r:
@@ -113,6 +113,9 @@ def marketOpenedAt(r):
 
 def ibMaintWindow():
     est = pytz.timezone('America/New_York')
-    start = est.localize(datetime.datetime.now().replace(hour=23, minute=45, second=0, microsecond=0)).astimezone(pytz.utc)
-    end = est.localize((now() + datetime.timedelta(days=1)).replace(hour=0, minute=45, second=0, microsecond=0)).astimezone(pytz.utc)
-    return now() in DateTimeRange(start, end)
+    start = est.localize(datetime.now().replace(hour=23, minute=45, second=0, microsecond=0)).astimezone(pytz.utc)
+    end = est.localize((datetime.now() + timedelta(days=1)).replace(hour=0, minute=45, second=0, microsecond=0)).astimezone(pytz.utc)
+    return DateTimeRange(start, end)
+
+def inIbMaintWindow():
+    return nowInUtc() in ibMaintWindow()
