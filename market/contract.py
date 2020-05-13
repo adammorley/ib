@@ -7,6 +7,7 @@ from ib_insync.contract import Stock
 from ib_insync.ib import IB
 from ib_insync.objects import PnLSingle
 from ib_insync.objects import PriceIncrement
+from ib_insync.objects import RealTimeBarList
 
 from market import fatal
 
@@ -20,6 +21,7 @@ class wContract:
     priceIncrement: float
     ibClient: IB
     pnl: PnLSingle
+    bars: RealTimeBarList = None
     def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
         self.localSymbol = localSymbol
@@ -61,11 +63,13 @@ class wContract:
             else:
                 self.localSymbol = self.contract.localSymbol
 
+    # high/low/open are for the day
     def getTick(self):
         tick = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
         self.ibClient.sleep(1)
         return tick
 
+    # high/low/open are for the day
     def getTicker(self):
         ticker = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
         self.ibClient.sleep(1)
@@ -113,6 +117,28 @@ class wContract:
             self.priceIncrement = 0.01
         else:
             self.priceIncrement = self.marketRule[0].increment
+
+    def realtimeBars(self):
+        if self.bars == None:
+            self.bars = self.ibClient.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
+            self.bars.updateEvent += self.realtimeBarsUpdate
+        else:
+            logging.warn('already running realtime bars.')
+
+    # keep just the last minute of bars
+    def realtimeBarsUpdate(self, bb, new):
+        if len(bb) > 12:
+            for i in range(0, len(bb)-12):
+                bb.pop(i)
+
+    def realtimeHiLoSpread(self):
+        hi, lo = None, None
+        for i in range(0, len(self.bars)):
+                if hi == None or self.bars[i].high > hi:
+                    hi = self.bars[i].high
+                elif lo == None or self.bars[i].low < lo:
+                    lo = self.bars[i].low
+        return hi - lo
 
     def updatePnl(self, account):
         pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)

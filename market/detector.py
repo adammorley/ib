@@ -76,6 +76,7 @@ def setupData(wc, conf, backtestArgs=None):
         if len(histData) < dataStore.longInterval *2:
             fatal.fatal(conf, 'did not get back the right amount of data from historical data call, perhaps broken?')
         dataStore.calcInitEMAs(histData)
+        wc.realtimeBars()
     else:
         fatal.errorAndExit('do not know what to do!')
     return dataStore, dataStream
@@ -250,7 +251,8 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        logging.warn('updated EMAs short: {:.3f}/long: {:.3f} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
+        hiLoSpread = self.wContract.realtimeHiLoSpread()
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, hiLoSpread: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, hiLoSpread, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
