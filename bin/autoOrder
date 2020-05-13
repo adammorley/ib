@@ -109,7 +109,7 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
         disableWatch(conf, dataStore)
         continue
     elif not date.isMarketOpen(date.parseOpenHours(wc.details), date.nowInUtc() + timedelta(minutes=conf.greyzone)): # closing soon
-        logging.warn('market closing soon, waiting for close [will restart analysis on open]')
+        logging.warn('market closing soon, waiting for close')
         sleepMins = (date.marketNextCloseTime(date.parseOpenHours(wc.details)) - date.nowInUtc()).total_seconds() /60
         waitAndUpdateEMAs(ibc, sleepMins, dataStore, dataStream)
         disableWatch(conf, dataStore)
