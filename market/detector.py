@@ -251,8 +251,10 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        hiLoSpread = self.wContract.realtimeHiLoSpread()
-        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, hiLoSpread: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, hiLoSpread, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
+        hi, lo = self.wContract.realtimeHiLo()
+        hiLoSpread = hi-lo
+        midLoSpread = midpoint-lo
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, midLoSpread: {}, hiLoSpread: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, midLoSpread, hiLoSpread, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False

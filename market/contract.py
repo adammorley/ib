@@ -131,14 +131,14 @@ class wContract:
             for i in range(0, len(bb)-12):
                 bb.pop(i)
 
-    def realtimeHiLoSpread(self):
+    def realtimeHiLo(self):
         hi, lo = None, None
         for i in range(0, len(self.bars)):
                 if hi == None or self.bars[i].high > hi:
                     hi = self.bars[i].high
                 elif lo == None or self.bars[i].low < lo:
                     lo = self.bars[i].low
-        return hi - lo
+        return hi, lo
 
     def updatePnl(self, account):
         pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)

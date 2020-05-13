@@ -60,6 +60,10 @@ def waitAndUpdateEMAs(ibc, pauseMinutes, dataStore, dataStream):
         ibc.sleep(60)
         dataStore.recalcEMAs(dataStream)
 
+def disableWatch(conf, dataStore):
+    if conf.detector == 'emaCrossover':
+        dataStore.areWatching = False
+
 def checkForExcessiveLosses(wc, conf):
     loss = detector.lossTooHigh(wc, conf)
     if loss:
@@ -102,16 +106,19 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
     elif not date.isMarketOpen( date.parseOpenHours(wc.details) ):
         logging.warn('market closed, waiting for open')
         ibc.sleep(60 * 5)
+        disableWatch(conf, dataStore)
         continue
     elif not date.isMarketOpen(date.parseOpenHours(wc.details), date.nowInUtc() + timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
         sleepMins = (date.marketNextCloseTime(date.parseOpenHours(wc.details)) - date.nowInUtc()).total_seconds() /60
         waitAndUpdateEMAs(ibc, sleepMins, dataStore, dataStream)
+        disableWatch(conf, dataStore)
         continue
     elif date.marketOpenedLessThan(date.parseOpenHours(wc.details), timedelta(minutes=conf.greyzone) ):
         logging.warn('market just opened, waiting')
         minutesOpen = (date.nowInUtc() - date.marketOpenedAt(date.parseOpenHours(wc.details))).total_seconds() /60
         waitAndUpdateEMAs(ibc, (conf.greyzone-minutesOpen), dataStore, dataStream)
+        disableWatch(conf, dataStore)
         continue
 
     entryPrice = None
