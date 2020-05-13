@@ -40,7 +40,6 @@ def PlaceBracketTrade(orders, orderDetails):
         stop = orders.stopOrder.trailingPercent
     else:
         stop = orders.stopOrder.auxPrice
-    logging.warn('submitted BUY @ {}, id: {}, qty: {}, tif: {}, LMT @ {}, id: {}, qty: {}, tif: {}, STP/TRAIL @ {}, id: {}, qty: {}, tif: {}'.format(orders.buyOrder.lmtPrice, orders.buyOrder.orderId, orders.buyOrder.totalQuantity, orders.buyOrder.tif, orders.profitOrder.lmtPrice, orders.profitOrder.orderId, orders.profitOrder.totalQuantity, orders.profitOrder.tif, stop, orders.stopOrder.orderId, orders.stopOrder.totalQuantity, orders.stopOrder.tif))
     orderDetails.wContract.ibClient.sleep(0)
     return trades
 

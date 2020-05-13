@@ -176,9 +176,8 @@ def adequateFunds(orderDetails, orders):
             fatal.errorAndExit('got back invalid format: {} {} {}'.format(os, orderDetails, order))
         ima = float( os.initMarginAfter )
         lhs += ima
-    logging.warn('funds: {} {} {}'.format(lhs, af_rhs, bp_rhs))
     if lhs < af_rhs and lhs < bp_rhs:
-        logging.warn('detected adequate funds')
+        logging.warn('detected adequate funds {} {} {}'.format(lhs, af_rhs, bp_rhs))
         return True
     logging.error('not enough funds: {} {} {}'.format(os, orderDetails, orders))
     return False

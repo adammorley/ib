@@ -20,32 +20,31 @@ def makeBar(histBar):
     bar.low = histBar.low
     return bar
 
-def getNextBar(newBars, index):
-    return newBars[index]
+def getNextBar(dataStream, index):
+    return dataStream[index]
 
-def updateBarSet(newBars, i, dataStore):
-    if i > 3:
-        dataStore.first = dataStore.second
-        dataStore.second = dataStore.third
-    dataStore.third = getNextBar(newBars, i)
-    return dataStore
+def setupThreeBar(dataStream, period):
+    index = len(dataStream)-1 - period *24*60
+    dataStore = bars.BarSet()
+    dataStore.first = getNextBar(dataStream, index)
+    dataStore.second = getNextBar(dataStream, index+1)
+    dataStore.third = getNextBar(dataStream, index+2)
+    return index+3, dataStore
 
-def backtest(wc, dataStream, dataStore, conf):
-    totals = {'gl': 0, 'tf': 0, 'mf': 0}
+def backtest(wc, dataStream, dataStore, conf, period):
+    totals = {'gl': 0, 'tf': 0, 'mf': 0, 'op': 0}
     positions = []
     startIndex = None
     # which data point in the dataStream/bar set to evaluate on this round about buy or not
     if conf.detector == 'threeBarPattern':
-        startIndex = 2
+        # FIXME: NEED TO FIND OUT IF AUTO ORDER USES THE INDEX, IF SO, STICK IT INTO THE DATA STORE AND REUSE HERE
+        startIndex, dataStore = setupThreeBar(dataStream, period)
     elif conf.detector == 'emaCrossover':
         # FIXME: might be a bug here
         # we just stored (at init) the last EMA calculated, eg we are examining curClosePriceIndex
         startIndex = dataStore.curEmaIndex + 1
 
     for i in range(startIndex, len(dataStream)-1):
-        if conf.detector == 'threeBarPattern':
-            dataStore = updateBarSet(dataStream, i, dataStore)
-    
         # first, see if any positions changed
         logging.info('number of positions open: {}'.format(len(positions)))
         positions, totals = checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
@@ -67,9 +66,9 @@ def backtest(wc, dataStream, dataStore, conf):
                 orders = order.CreateBracketOrder(od)
                 # need to use real values (not offsets) for position checker
                 if orders.stopOrder.orderType == 'TRAIL': # have to store for position tracking
-                    if orderDetails.config.stopPercent:
+                    if od.config.stopPercent:
                         orders.stopOrder.auxPrice = order.Round( orders.buyOrder.lmtPrice *(100.0 - orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
-                    elif orderDetails.config.stopTarget:
+                    elif od.config.stopTarget:
                         orders.stopOrder.auxPrice = orders.buyOrder.lmtPrice - orderDetails.config.stopTarget
                 if conf.detector == 'threeBarPattern':
                     orders, amount = checkTradeExecution(dataStore.third, orders)
@@ -81,10 +80,15 @@ def backtest(wc, dataStream, dataStore, conf):
                     logging.warn('opened a position: %s', orders)
                     positions.append(orders)
                     totals['tf'] += orders.buyOrder.lmtPrice * orders.buyOrder.totalQuantity
+                    totals['op'] += orders.buyOrder.totalQuantity
                 elif orders is None and amount is not None:
                     logging.warn('opened and closed a position in third bar')
                     totals['gl'] += amount
                 logging.debug('totalFundsInPlay: %.2f', totals['tf'])
+        if conf.detector == 'threeBarPattern':
+            dataStore.first = dataStore.second
+            dataStore.second = dataStore.third
+            dataStore.third = getNextBar(dataStream, i)
     return totals
 
 # only used to check the third bar for if the order bought/sold in the third bar during "blur"
@@ -114,7 +118,7 @@ def checkPositions(wc, positions, conf, dataStore, dataStream, index, totals):
         elif not closed and position.stopOrder.orderType == 'TRAIL':
             closePrice = dataStream[index].close
             if closePrice > position.buyOrder.lmtPrice:
-                if orders.stopOrder.trailingPercent:
+                if position.stopOrder.trailingPercent:
                     position.stopOrder.auxPrice = order.Round( closePrice * (100.0 - position.stopOrder.trailingPercent)/100.0, wc.priceIncrement)
                 elif conf.stopTarget:
                     position.stopOrder.auxPrice = order.Round( closePrice - conf.stopTarget)

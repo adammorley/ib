@@ -235,6 +235,14 @@ class EMA:
             logging.info('midpoint fell below long ema, stopping watch')
             self.areWatching = False
             self.countOfCrossedIntervals = 0
+        elif self.areWatching and self.long + 0.5 > self.short:
+            logging.info('distance between short and long EMAs inadequate')
+            self.areWatching = False
+            self.countOfCrossedIntervals = 0
+        elif self.areWatching and self.short + 0.5 > midpoint:
+            logging.info('distance between short EMA and midpoint inadequate')
+            self.areWatching = False
+            self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
             logging.info('state just changed to uncrossed, stopping watch')
             self.areWatching = False
@@ -251,5 +259,5 @@ class EMA:
         if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-            logging.warn('returning a buy {}'.format(self))
+            logging.info('returning a buy {}'.format(self))
             return midpoint # buyPrice

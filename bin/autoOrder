@@ -59,6 +59,11 @@ def outputIfHolding(wc):
         out += 'marketPrice: {} unrealizedPNL: {}, realizedPNL: {}'.format(p.marketPrice, p.unrealizedPNL, p.realizedPNL)
         logging.warn(out)
 
+def waitAndUpdateEMAs(ibc, pauseMinutes, dataStore, dataStream):
+    for p in (0, pauseMinutes):
+        ibc.sleep(60)
+        dataStore.recalcEMAs(dataStream)
+
 def checkForExcessiveLosses(wc, conf):
     loss = detector.lossTooHigh(wc, conf)
     if loss:
@@ -103,24 +108,18 @@ while now() < startTime + datetime.timedelta(hours=20):
         ibc.sleep(60 * 5)
         continue
 
-    # FIXME: is a "just opened" useful here, or is the one in EMA's check for buy ok?
-    buyOk = True
     if not date.isMarketOpen(date.parseOpenHours(wc.details), now() + datetime.timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close [will restart analysis on open]')
-        ibc.sleep(60 * conf.greyzone)
-        buyOk = False
+        waitAndUpdateEMAs(ibc, conf.greyzone, dataStore, dataStream)
     elif date.marketOpenedLessThan( date.parseOpenHours(wc.details), datetime.timedelta(minutes=conf.greyzone) ):
         logging.warn('market just opened, waiting')
-        # FIXME: sleep greyzone from market open time
-        ibc.sleep(60 * conf.greyzone)
-        buyOk = False
+        waitAndUpdateEMAs(ibc, conf.greyzone, dataStore, dataStream)
 
     buyPrice = None
     if conf.detector == 'threeBarPattern':
         buyPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
     elif conf.detector == 'emaCrossover':
         buyPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
-    buyPrice = buyPrice if buyOk else None # allows for metadata updates while markets are trasitioning
 
     orderDetails = None
     if buyPrice is not None:
