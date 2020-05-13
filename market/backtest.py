@@ -91,7 +91,7 @@ def backtest(wc, dataStream, dataStore, conf, period):
     if len(positions) != 0:
         positions, totals = checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
         for p in positions:
-            totals['lo'] = (p.buyOrder.lmtPrice - dataStream[len(dataStream)-1].close) *p.buyOrder.totalQuantity
+            totals['lo'] = (dataStream[len(dataStream)-1].close - p.buyOrder.lmtPrice) *p.buyOrder.totalQuantity
     return totals
 
 # only used to check the third bar for if the order bought/sold in the third bar during "blur"
