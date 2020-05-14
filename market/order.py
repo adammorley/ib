@@ -92,25 +92,30 @@ def calculateQty(od):
     else:
         return od.config.qty
 
+def determineDirection(od):
+    if od.direction != 'BUY' and od.direction != 'SELL':
+        fatal.fatal(od.config, 'direction makes no sense {}'.format(od.direction))
+    entryAction = od.direction
+    exitAction = None
+    if entryAction == 'BUY':
+        exitAction = 'SELL'
+    elif entryAction == 'SELL':
+        exitAction = 'BUY'
+    if exitAction is None:
+        fatal.fatal(od.config, 'unclear action in order: {} {}'.format(entryAction, exitAction))
+    return entryAction, exitAction
+
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 # order matters, see class note
 def CreateBracketOrder(orderDetails, account=None):
     qty = calculateQty(orderDetails)
+    entryDirection, exitDirection = determineDirection(orderDetails)
     orders = BracketOrder()
-
-    entryAction = orderDetails.direction
-    exitAction = None
-    if orderDetails.direction == 'BUY':
-        exitAction = 'SELL'
-    elif orderDetails.direction == 'SELL':
-        exitAction = 'BUY'
-    if exitAction is None:
-        fatal.fatal(orderDetails.config, 'unclear action in order: {} {}'.format(entryAction, exitAction))
 
     orders.entryOrder = Order()
     orders.entryOrder.account = account
     orders.entryOrder.transmit = False
-    orders.entryOrder.action = orderDetails.direction
+    orders.entryOrder.action = entryAction
     orders.entryOrder.totalQuantity = qty
     orders.entryOrder.orderType = 'LMT'
     orders.entryOrder.lmtPrice = Round(orderDetails.entryPrice, orderDetails.wContract.priceIncrement)
