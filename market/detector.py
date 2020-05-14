@@ -35,9 +35,9 @@ def connectivityError(reqId, errorCode, errorString, contract):
 # https://interactivebrokers.com/php/whiteLabel/TWS_Reference_Information/pnl_.htm
 def lossTooHigh(wc, conf):
     wc.updatePnl(conf.account)
-    if wc.pnl.realizedPnL != wc.pnl.realizedPnL:
-        return None
-    elif wc.pnl.realizedPnL < (-1*conf.maxLoss):
+    if math.isnan(wc.pnl.realizedPnL):
+        return False # returns NaN when zero, different from .portfolio()
+    elif wc.pnl.realizedPnL < 0 and abs(wc.pnl.realizedPnL) > conf.maxLoss:
         return True
     return False
 

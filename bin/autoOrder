@@ -68,9 +68,6 @@ def checkForExcessiveLosses(wc, conf):
     loss = detector.lossTooHigh(wc, conf)
     if loss:
         fatal.fatal('lost too many dollars, exiting.  {} {} {} {}'.format(conf.maxLoss, wc.pnl, conf.account, wc.contract))
-    p = getPortfolio(wc)
-    if loss is None and p is not None and p.contract == wc.contract:
-        fatal.errorAndExit('somethings wrong with pnl: {} {} {}'.format(wc.pnl, wc.contract, p))
 
 startTime = date.nowInUtc()
 
