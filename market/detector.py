@@ -119,8 +119,9 @@ class EMA:
     shortEMAoverLongEMA: bool = None
     previousState: bool = None
     stateChanged: bool = None
-    areWatching: bool = None
-    countOfCrossedIntervals: int = 0
+    count: int = 0
+    direction: str = None
+    prevMidpoint: float = None
     watchCount: int = 5 # barSizeSetting intervals
     shortInterval: int = 5
     longInterval: int = 20
@@ -227,32 +228,38 @@ class EMA:
         if not self.backTest:
             sleepFunc(self.barSize) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
-        direction = 'BUY'
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to waiting
-            logging.info('midpoint fell below long ema, stopping watch')
-            self.areWatching = False
-            self.countOfCrossedIntervals = 0
-        elif self.areWatching and self.stateChanged and not self.shortEMAoverLongEMA: # watching for consistent crossover, didn't get it
-            logging.info('state just changed to uncrossed, stopping watch')
-            self.areWatching = False
-            self.countOfCrossedIntervals = 0
-        elif not self.areWatching and self.stateChanged and self.shortEMAoverLongEMA: # short crossed long, might be a buy, flag for re-inspection
-            logging.info('state just changed to crossed, starting to watch')
-            self.areWatching = True
-            self.countOfCrossedIntervals = 1
-        elif self.areWatching and not self.stateChanged and self.shortEMAoverLongEMA: # watching, and it's staying set
-            self.countOfCrossedIntervals += 1
-        logging.info('after checks: %s', self)
-        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}; current state: areWatching: {}, shortEMAoverLongEMA: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.shortEMAoverLongEMA, self.stateChanged, self.countOfCrossedIntervals))
-    
-        if not self.areWatching:
-            return None, None
-        elif self.areWatching and self.countOfCrossedIntervals >= self.watchCount:
-            self.areWatching = False
-            self.countOfCrossedIntervals = 0
-            logging.info('returning an entry at {} on side {}'.format(entryPrice, direction))
-            return direction, midpoint # direction of entry, entryPrice
+        if self.count > 0 and self.direction == 'BUY' and midpoint < self.long:
+            logging.info('midpoint fell below long ema during buy watch, stopping watch')
+            self.count = 0
+        elif self.count > 0 and self.direction == 'SELL' and midpoint > self.long:
+            logging.info('midpoint went above long ema during sell watch, stopping watch')
+            self.count = 0
+        elif self.count > 0 and self.direction == 'BUY' and self.prevMidpoint is not None and midpoint <= self.prevMidpoint:
+            logging.info('weak momentum signal, midpoints crossing')
+            self.count = 0
+        elif self.count > 0 and self.direction == 'SELL' and self.prevMidpoint is not None and midpoint >= self.prevMidpoint:
+            logging.info('weak momentum signal, midpoints crossing')
+            self.count = 0
+        elif self.stateChanged:
+            self.count = 1
+            if self.shortEMAoverLongEMA:
+                self.direction = 'BUY'
+            else:
+                self.direction = 'SELL'
+        elif self.count and not self.stateChanged:
+            self.count += 1
         else:
-            raise RuntimeError('somethings wrong')
+            self.count = 0
+        logging.info('after checks: %s', self)
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, prevMidpoint: {}; states: count: {}, direction: {}, shortEMAoverLongEMA: {}, stateChanged: {}'.format(self.short, self.long, midpoint, self.prevMidpoint, self.count, self.direction, self.shortEMAoverLongEMA, self.stateChanged))
+        self.prevMidpoint = midpoint
+
+        if self.direction == 'SELL':
+            return None, None
+        if self.count >= self.watchCount:
+            self.count = 0
+            logging.info('returning an entry at {} on side {}'.format(midpoint, self.direction))
+            return self.direction, midpoint # direction of entry, entryPrice
+        return None, None

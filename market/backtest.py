@@ -53,7 +53,7 @@ def backtest(wc, dataStream, dataStore, conf, period):
         if conf.detector == 'threeBarPattern':
             entryPrice = dataStore.analyze()
         elif conf.detector == 'emaCrossover':
-            entryPrice = dataStore.checkForBuy(dataStream)
+            direction, entryPrice = dataStore.checkForEntry(dataStream)
     
         if entryPrice is not None:
             od = order.OrderDetails(entryPrice, conf, wc)
