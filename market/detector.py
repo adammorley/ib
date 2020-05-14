@@ -68,9 +68,6 @@ def setupData(wc, conf, backtestArgs=None):
         logging.warn('installing auto restart handler.')
         wc.ibClient.errorEvent += connectivityError
 
-        dataStream = wc.getTicker()
-        wc.ibClient.sleep(0)
-
         useRth = False if conf.enterOutsideRth else True
         histData = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
         if len(histData) < dataStore.longInterval *2:
@@ -210,7 +207,6 @@ class EMA:
             midpoint = dataStream[self.curEmaIndex].close
             logging.info('recalculating emas at index {} using price of {}'.format(self.curEmaIndex, midpoint))
         else:
-            #midpoint = dataStream.midpoint()
             midpoint = self.wContract.realtimeMidpoint()
             logging.info('recalculating emas using market midpoint of {}'.format(midpoint))
 
@@ -256,14 +252,8 @@ class EMA:
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        hi, lo = None, None
-        if not self.backTest:
-            hi, lo = self.wContract.realtimeHiLo()
-        else:
-            hi, lo = dataStream[self.curEmaIndex].high, dataStream[self.curEmaIndex].low
-        hiLoSpread = hi-lo
-        midLoSpread = midpoint-lo
-        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, midLoSpread: {}, hiLoSpread: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, midLoSpread, hiLoSpread, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
+        bid = self.wContract.realtimeBid()
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, bid: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, bid, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals >= self.watchCount:
             self.areWatching = False

@@ -52,7 +52,6 @@ class wContract:
         else:
             fatal.errorAndExit('no security specified')
         self.contract = c
-
     def qualify(self):
         r = self.ibClient.qualifyContracts(self.contract)
         if len(r) != 1 or r[0].symbol != self.symbol:
@@ -62,19 +61,6 @@ class wContract:
                 fatal.errorAndExit('problem with looking up contract')
             else:
                 self.localSymbol = self.contract.localSymbol
-
-    # high/low/open are for the day
-    def getTick(self):
-        tick = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
-        self.ibClient.sleep(1)
-        return tick
-
-    # high/low/open are for the day
-    def getTicker(self):
-        ticker = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
-        self.ibClient.sleep(1)
-        return ticker
-
     def ibDetails(self):
         r = self.ibClient.reqContractDetails(self.contract)
         if len(r) != 1 or r[0].contract != self.contract:
@@ -86,6 +72,18 @@ class wContract:
         if self.contract.exchange == 'GLOBEX' and self.details.timeZoneId == 'America/Belize': # CME/GLOBEX is in chicago not belize.
             self.details.timeZoneId = 'America/Chicago'
 
+    # high/low/open are for the day
+    # sugget use realtime below
+    def getTick(self):
+        tick = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=True, regulatorySnapshot=False)
+        self.ibClient.sleep(1)
+        return tick
+    # high/low/open are for the day
+    # sugget use realtime below
+    def getTicker(self):
+        ticker = self.ibClient.reqMktData(contract=self.contract, genericTickList='', snapshot=False, regulatorySnapshot=False)
+        self.ibClient.sleep(1)
+        return ticker
     def marketPrice(self):
         tick = self.getTick()
         mp = tick.marketPrice()
@@ -124,22 +122,15 @@ class wContract:
             self.bars.updateEvent += self.realtimeBarsUpdate
         else:
             logging.warn('already running realtime bars.')
-
     # keep just the last minute of bars
     def realtimeBarsUpdate(self, bb, new):
         if len(bb) > 12:
             for i in range(0, len(bb)-12):
                 bb.pop(i)
-
-    def realtimeHiLo(self):
-        hi, lo = None, None
-        for i in range(0, len(self.bars)):
-                if hi == None or self.bars[i].high > hi:
-                    hi = self.bars[i].high
-                elif lo == None or self.bars[i].low < lo:
-                    lo = self.bars[i].low
-        return hi, lo
-
+    def realtimeBid(self):
+        return self.bars[-1].bid
+    def realtimeLow(self):
+        return self.bars[-1].low
     def realtimeMidpoint(self):
         return self.bars[-1].close
 
