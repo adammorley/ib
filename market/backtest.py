@@ -49,16 +49,14 @@ def backtest(wc, dataStream, dataStore, conf, period):
         positions, totals = checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
     
         # see if we calculated an entryPrice
-        direction, entryPrice = None, None
+        entryAction, entryPrice = None, None
         if conf.detector == 'threeBarPattern':
             entryPrice = dataStore.analyze()
         elif conf.detector == 'emaCrossover':
-            direction, entryPrice = dataStore.checkForEntry(dataStream)
-        if direction == 'SELL':
-            entryPrice = None
+            entryAction, entryPrice = dataStore.checkForEntry(dataStream)
     
         if entryPrice is not None:
-            od = order.OrderDetails(entryPrice, conf, wc)
+            od = order.OrderDetails(entryPrice, conf, wc, entryAction)
             od.config.qty = order.calculateQty(od)
             logging.warn('found an order: %s %s', od, dataStore)
             if len(positions) < od.config.openPositions:

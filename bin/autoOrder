@@ -118,19 +118,19 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
         disableWatch(conf, dataStore)
         continue
 
-    direction, entryPrice = None, None
+    entryAction, entryPrice = None, None
     if conf.detector == 'threeBarPattern':
         entryPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
     elif conf.detector == 'emaCrossover':
         try:
-            direction, entryPrice = dataStore.checkForEntry(dataStream, ibc.sleep)
+            entryAction, entryPrice = dataStore.checkForEntry(dataStream, ibc.sleep)
         except Exception as e:
             fatal.errorAndExit('got an exception while running waitloop: {}'.format(e))
 
     orderDetails = None
     if entryPrice is not None:
         try:
-            orderDetails = order.OrderDetails(entryPrice, conf, wc, direction)
+            orderDetails = order.OrderDetails(entryPrice, conf, wc, entryAction)
         except FloatingPointError as e:
             errorCount += 1
             logging.error('got an NaN during order creation: {} {} {}'.format(e, entryPrice, orderDetails))

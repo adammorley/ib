@@ -120,7 +120,7 @@ class EMA:
     previousState: bool = None
     stateChanged: bool = None
     count: int = 0
-    direction: str = None
+    entryAction: str = None
     prevMidpoint: float = None
     watchCount: int = 5 # barSizeSetting intervals
     shortInterval: int = 5
@@ -230,36 +230,36 @@ class EMA:
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
-        if self.count > 0 and self.direction == 'BUY' and midpoint < self.long:
+        if self.count > 0 and self.entryAction == 'BUY' and midpoint < self.long:
             logging.info('midpoint fell below long ema during buy watch, stopping watch')
             self.count = 0
-        elif self.count > 0 and self.direction == 'SELL' and midpoint > self.long:
+        elif self.count > 0 and self.entryAction == 'SELL' and midpoint > self.long:
             logging.info('midpoint went above long ema during sell watch, stopping watch')
             self.count = 0
-        elif self.count > 0 and self.direction == 'BUY' and self.prevMidpoint is not None and midpoint <= self.prevMidpoint:
+        elif self.count > 0 and self.entryAction == 'BUY' and self.prevMidpoint is not None and midpoint <= self.prevMidpoint:
             logging.info('weak momentum signal, midpoints crossing')
             self.count = 0
-        elif self.count > 0 and self.direction == 'SELL' and self.prevMidpoint is not None and midpoint >= self.prevMidpoint:
+        elif self.count > 0 and self.entryAction == 'SELL' and self.prevMidpoint is not None and midpoint >= self.prevMidpoint:
             logging.info('weak momentum signal, midpoints crossing')
             self.count = 0
         elif self.stateChanged:
             self.count = 1
             if self.shortEMAoverLongEMA:
-                self.direction = 'BUY'
+                self.entryAction = 'BUY'
             else:
-                self.direction = 'SELL'
+                self.entryAction = 'SELL'
         elif self.count and not self.stateChanged:
             self.count += 1
         else:
             self.count = 0
         logging.info('after checks: %s', self)
-        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, prevMidpoint: {}; states: count: {}, direction: {}, shortEMAoverLongEMA: {}, stateChanged: {}'.format(self.short, self.long, midpoint, self.prevMidpoint, self.count, self.direction, self.shortEMAoverLongEMA, self.stateChanged))
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, prevMidpoint: {}; states: count: {}, entryAction: {}, shortEMAoverLongEMA: {}, stateChanged: {}'.format(self.short, self.long, midpoint, self.prevMidpoint, self.count, self.entryAction, self.shortEMAoverLongEMA, self.stateChanged))
         self.prevMidpoint = midpoint
 
-        if self.direction == 'SELL':
+        if self.entryAction == 'SELL':
             return None, None
         if self.count >= self.watchCount:
             self.count = 0
-            logging.info('returning an entry at {} on side {}'.format(midpoint, self.direction))
-            return self.direction, midpoint # direction of entry, entryPrice
+            logging.info('returning an entry at {} on side {}'.format(midpoint, self.entryAction))
+            return self.entryAction, midpoint # entryAction of entry, entryPrice
         return None, None
