@@ -49,11 +49,13 @@ def backtest(wc, dataStream, dataStore, conf, period):
         positions, totals = checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
     
         # see if we calculated an entryPrice
-        entryPrice = None
+        direction, entryPrice = None, None
         if conf.detector == 'threeBarPattern':
             entryPrice = dataStore.analyze()
         elif conf.detector == 'emaCrossover':
             direction, entryPrice = dataStore.checkForEntry(dataStream)
+        if direction == 'SELL':
+            entryPrice = None
     
         if entryPrice is not None:
             od = order.OrderDetails(entryPrice, conf, wc)
@@ -66,9 +68,15 @@ def backtest(wc, dataStream, dataStore, conf, period):
                 # need to use real values (not offsets) for position checker
                 if orders.stopOrder.orderType == 'TRAIL': # have to store for position tracking
                     if od.config.stopPercent is not None:
-                        orders.stopOrder.auxPrice = order.Round( orders.entryOrder.lmtPrice *(100.0 - orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
+                        if orders.entryOrder.action == 'BUY':
+                            orders.stopOrder.auxPrice = order.Round( orders.entryOrder.lmtPrice *(100.0 - orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
+                        else:
+                            orders.stopOrder.auxPrice = order.Round( orders.entryOrder.lmtPrice *(100.0 + orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
                     elif od.config.stopTarget:
-                        orders.stopOrder.auxPrice = orders.entryOrder.lmtPrice - od.config.stopTarget
+                        if orders.entryOrder.action == 'BUY':
+                            orders.stopOrder.auxPrice = orders.entryOrder.lmtPrice - od.config.stopTarget
+                        else:
+                            orders.stopOrder.auxPrice = orders.entryOrder.lmtPrice + od.config.stopTarget
                 if conf.detector == 'threeBarPattern':
                     orders, amount = checkTradeExecution(dataStore.third, orders)
                 elif conf.detector == 'emaCrossover':
@@ -91,14 +99,21 @@ def backtest(wc, dataStream, dataStore, conf, period):
     if len(positions) != 0:
         positions, totals = checkPositions(wc, positions, conf, dataStore, dataStream, i, totals)
         for p in positions:
-            totals['lo'] = (dataStream[len(dataStream)-1].close - p.entryOrder.lmtPrice) *p.entryOrder.totalQuantity
+            if p.entryOrder.action == 'BUY':
+                totals['lo'] = (dataStream[len(dataStream)-1].close - p.entryOrder.lmtPrice) *p.entryOrder.totalQuantity
+            else:
+                totals['lo'] = (p.entryOrder.lmtPrice - dataStream[len(dataStream)-1].close) *p.entryOrder.totalQuantity
     return totals
 
 # only used to check the third bar for if the order bought/sold in the third bar during "blur"
 # eg this is an unknown because we aren't analyzing by-second data
 def checkTradeExecution(bar, orders):
     if orders.entryOrder.lmtPrice <= bar.high and orders.stopOrder.auxPrice >= bar.low:
-        amount = (orders.stopOrder.auxPrice - orders.entryOrder.lmtPrice) *orders.entryOrder.totalQuantity
+        amount = None
+        if orders.entryOrder.action == 'BUY':
+            amount = (orders.stopOrder.auxPrice - orders.entryOrder.lmtPrice) *orders.entryOrder.totalQuantity
+        else:
+            amount = (orders.entryOrder.lmtPrice - orders.stopOrder.auxPrice)  *orders.entryOrder.totalQuantity
         return None, amount
     else:
         return orders, None
@@ -123,9 +138,15 @@ def checkPositions(wc, positions, conf, dataStore, dataStream, index, totals):
             closePrice = dataStream[index].close
             if closePrice > position.entryOrder.lmtPrice:
                 if conf.stopPercent is not None:
-                    position.stopOrder.auxPrice = order.Round( closePrice * (100.0 - position.stopOrder.trailingPercent)/100.0, wc.priceIncrement)
+                    if position.entryOrder.action == 'BUY':
+                        position.stopOrder.auxPrice = order.Round( closePrice * (100.0 - position.stopOrder.trailingPercent)/100.0, wc.priceIncrement)
+                    else:
+                        position.stopOrder.auxPrice = order.Round( closePrice * (100.0 + position.stopOrder.trailingPercent)/100.0, wc.priceIncrement)
                 elif conf.stopTarget:
-                    position.stopOrder.auxPrice = order.Round( closePrice - conf.stopTarget, wc.priceIncrement)
+                    if position.entryOrder.action == 'BUY':
+                        position.stopOrder.auxPrice = order.Round( closePrice - conf.stopTarget, wc.priceIncrement)
+                    else:
+                        position.stopOrder.auxPrice = order.Round( closePrice + conf.stopTarget, wc.priceIncrement)
         #else position stays, no changes
     return positions, totals
 
@@ -157,12 +178,18 @@ def checkStopProfit(position, bar):
     executed = None
     # executed at stop price
     if position.stopOrder.auxPrice >= bar.low and position.exitOrder.lmtPrice > bar.high:
-        amount = position.stopOrder.auxPrice - position.entryOrder.lmtPrice
+        if position.entryOrder.action == 'BUY':
+            amount = position.stopOrder.auxPrice - position.entryOrder.lmtPrice
+        else:
+            amount = position.entryOrder.lmtPrice - position.stopOrder.auxPrice
         logging.info('closing position at a loss: {} {} {}'.format(amount, position, bar))
         executed = True
     # executed at profit price
     elif position.stopOrder.auxPrice < bar.low and position.exitOrder.lmtPrice <= bar.high:
-        amount = position.exitOrder.lmtPrice - position.entryOrder.lmtPrice
+        if position.entryOrder.action == 'BUY':
+            amount = position.exitOrder.lmtPrice - position.entryOrder.lmtPrice
+        else:
+            amount = position.entryOrder.lmtPrice - position.exitOrder.lmtPrice
         logging.info('closing position at a gain: {} {} {}'.format(amount, position, bar))
         executed = True
     # did not execute, no delta, stays as a position
@@ -174,7 +201,10 @@ def checkStopProfit(position, bar):
     elif position.stopOrder.auxPrice >= bar.low and position.exitOrder.lmtPrice <= bar.high:
         logging.info('wonky: closing position: {}'.format(position))
         executed = None
-        amount = position.stopOrder.auxPrice - position.entryOrder.lmtPrice
+        if position.entryOrder.action == 'BUY':
+            amount = position.stopOrder.auxPrice - position.entryOrder.lmtPrice
+        else:
+            amount = position.entryOrder.lmtPrice - position.stopOrder.auxPrice
     else:
         logging.fatal('unhandled {} {}'.format(position, bar))
     if amount is not None:
