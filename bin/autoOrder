@@ -130,7 +130,7 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
     orderDetails = None
     if entryPrice is not None:
         try:
-            orderDetails = order.OrderDetails(entryPrice, conf, wc)
+            orderDetails = order.OrderDetails(entryPrice, conf, wc, direction)
         except FloatingPointError as e:
             errorCount += 1
             logging.error('got an NaN during order creation: {} {} {}'.format(e, entryPrice, orderDetails))

@@ -8,11 +8,13 @@ from market.config import Config
 class OrderDetails:
     entryPrice: float = None # converts to Decimal during order creation
     config: Config
+    direction: str
     wContract: wContract
 
-    def __init__(self, entryPrice, config, wContract):
+    def __init__(self, entryPrice, config, wContract, direction='BUY'):
         self.entryPrice = entryPrice
         self.config = config
+        self.direction = direction
         self.wContract = wContract
 
     def __repr__(self):
@@ -96,10 +98,19 @@ def CreateBracketOrder(orderDetails, account=None):
     qty = calculateQty(orderDetails)
     orders = BracketOrder()
 
+    entryAction = orderDetails.direction
+    exitAction = None
+    if orderDetails.direction == 'BUY':
+        exitAction = 'SELL'
+    elif orderDetails.direction == 'SELL':
+        exitAction = 'BUY'
+    if exitAction is None:
+        fatal.fatal(orderDetails.config, 'unclear action in order: {} {}'.format(entryAction, exitAction))
+
     orders.entryOrder = Order()
     orders.entryOrder.account = account
     orders.entryOrder.transmit = False
-    orders.entryOrder.action = 'BUY'
+    orders.entryOrder.action = orderDetails.direction
     orders.entryOrder.totalQuantity = qty
     orders.entryOrder.orderType = 'LMT'
     orders.entryOrder.lmtPrice = Round(orderDetails.entryPrice, orderDetails.wContract.priceIncrement)
@@ -109,7 +120,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.exitOrder = Order()
     orders.exitOrder.account = account
     orders.exitOrder.transmit = False
-    orders.exitOrder.action = 'SELL'
+    orders.exitOrder.action = exitAction
     orders.exitOrder.totalQuantity = qty
     orders.exitOrder.orderType = 'LMT'
     orders.exitOrder.lmtPrice = Round(exitPrice, orderDetails.wContract.priceIncrement)
@@ -121,7 +132,7 @@ def CreateBracketOrder(orderDetails, account=None):
         orders.dayOrder = Order()
         orders.dayOrder.account = account
         orders.dayOrder.transmit = False
-        orders.dayOrder.action = 'SELL'
+        orders.dayOrder.action = exitAction
         orders.dayOrder.totalQuantity = qty
         orders.dayOrder.orderType = 'LOC'
         orders.dayOrder.lmtPrice = Round(dayPrice, orderDetails.wContract.priceIncrement)
@@ -131,7 +142,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.stopOrder = Order()
     orders.stopOrder.account = account
     orders.stopOrder.transmit = True
-    orders.stopOrder.action = 'SELL'
+    orders.stopOrder.action = exitAction
     orders.stopOrder.totalQuantity = qty
     orders.stopOrder.tif = 'GTC'
     orders.stopOrder.outsideRth = orderDetails.config.exitOutsideRth

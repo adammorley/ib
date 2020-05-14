@@ -227,6 +227,7 @@ class EMA:
         if not self.backTest:
             sleepFunc(self.barSize) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
+        direction = 'BUY'
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
         if self.areWatching and midpoint < self.long: # we had a soft entry indicator, just go back to waiting
@@ -254,9 +255,12 @@ class EMA:
         logging.info('after checks: %s', self)
         logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}; current state: areWatching: {}, shortEMAoverLongEMA: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.shortEMAoverLongEMA, self.stateChanged, self.countOfCrossedIntervals))
     
-        if self.areWatching and self.countOfCrossedIntervals >= self.watchCount:
+        if not self.areWatching:
+            return None, None
+        elif self.areWatching and self.countOfCrossedIntervals >= self.watchCount:
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-            logging.info('returning an entry {}'.format(self))
-            direction = 'BUY'
+            logging.info('returning an entry at {} on side {}'.format(entryPrice, direction))
             return direction, midpoint # direction of entry, entryPrice
+        else:
+            raise RuntimeError('somethings wrong')
