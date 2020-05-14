@@ -28,7 +28,7 @@ parser.add_argument('--info', action='store_true', default=None)
 parser.add_argument('--error', action='store_true', default=None)
 parser.add_argument('--conf', type=str, required=True)
 
-parser.add_argument("--duration", default=10, type=int)
+parser.add_argument("--duration", default=2, type=int)
 parser.add_argument("--endDate", default='', type=str)
 
 parser.add_argument('--shortEMA', default=15, type=int)
@@ -65,23 +65,20 @@ if args.single:
     print(modTotals(totals))
     sys.exit(0)
 #for p in [1, 5, 10, 14, 30, 60]:
-for p in [1, 5, 7]:
-    #for lI in [20, 40, 60, 120, 200]:
-    for lI in [20]:
-        #for sI in [5, 15, 30, 50]:
-        for sI in [5]:
+for p in [1]:#, 2, 4, 8]:
+    for lI in [5, 10, 15, 20, 30, 40, 60, 120, 200]:
+    #for lI in [20]:
+        for sI in [2, 5, 10, 15, 20, 25, 30, 50]:
             if sI > lI:
                 continue
-            #for w in [5, 15, 30]:
-            for w in [5]:
-                #for sT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25]:
-                for sT in [0.25]:
-                    #for pT in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
-                    for pT in [1]:
+            for w in [2, 3, 5, 7, 15, 30]:
+                for sT in [0.5, 1, 1.5, 2, 3]:#, 1.5, 2, 2.5, 3, 4, 5, 6, 7]:
+                #for sT in [2]:
+                    for pT in [0.5, 1, 1.5, 2]:#, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 30]:
                         ID = 'lI:'+str(lI)+', sI:'+str(sI)+', w:'+str(w)+', sT:'+str(sT)+', pT:'+str(pT)+', pD:'+str(p)
                         #logging.error('running %s', ID)
-                        conf.profitPercent = pT
-                        conf.stopPercent = sT
+                        conf.profitTarget = pT
+                        conf.stopTarget = sT
                         if conf.detector == 'emaCrossover':
                             dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
                             dataStore.backTest = True

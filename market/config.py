@@ -25,13 +25,13 @@ class Config:
     symbol: str = None
     localSymbol: str = None
     percents: bool
-    profitTarget: float
-    profitPercent: float
-    stopPercent: float
-    stopTarget: float
+    profitTarget: float = None
+    profitPercent: float = None
+    stopPercent: float = None
+    stopTarget: float = None
     dayOrder: bool
-    dayPercent: float
-    dayTarget: float
+    dayPercent: float = None
+    dayTarget: float = None
     trail: bool
     qty: int
     openPositions: int

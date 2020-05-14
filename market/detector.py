@@ -128,7 +128,7 @@ class EMA:
     shortInterval: int = 5
     longInterval: int = 20
     barSizeStr: str = None
-    sleepTime: int = None
+    barSize: int = None # seconds
     backTest: bool = None
     curEmaIndex: int = None
     byPeriod: int = None # number of days of bars to examine during iterative backtest
@@ -144,7 +144,7 @@ class EMA:
         self.wContract = wContract
         if dur['unit'] != 'S' or not dur['value'] or not isinstance(dur['value'], int):
             fatal.errorAndExit('re-factor')
-        self.sleepTime = dur['value']
+        self.barSize = dur['value']
 
     def __repr__(self):
         pieces = []
@@ -174,8 +174,8 @@ class EMA:
                 sma = 0
                 startIndex = 0
                 if self.byPeriod:
-                    startIndex = len(dataStream)-1 - self.byPeriod *60 *24
-                    logging.info('doing by period, using index/period(days): {}/{}'.format(startIndex, self.byPeriod))
+                    startIndex = len(dataStream)-1 - int(self.byPeriod *60*60 /self.barSize)
+                    logging.info('doing by period, using index/period(hours): {}/{}'.format(startIndex, self.byPeriod))
                 sma = data.calcSMA(interval, dataStream, startIndex)
                 # FIXME: might be a bug here, because interval calculations
                 ema = data.calcEMA(dataStream[startIndex+interval].close, sma, interval)
@@ -210,7 +210,8 @@ class EMA:
             midpoint = dataStream[self.curEmaIndex].close
             logging.info('recalculating emas at index {} using price of {}'.format(self.curEmaIndex, midpoint))
         else:
-            midpoint = dataStream.midpoint()
+            #midpoint = dataStream.midpoint()
+            midpoint = self.wContract.realtimeMidpoint()
             logging.info('recalculating emas using market midpoint of {}'.format(midpoint))
 
         if math.isnan(midpoint):
@@ -228,7 +229,7 @@ class EMA:
     #   if the market opened less than 15 minutes ago, we're just going to ignore signals
     def checkForBuy(self, dataStream, sleepFunc=None):
         if not self.backTest:
-            sleepFunc(self.sleepTime) # if you change this, be sure to understand the call to data.getHistData and the p argument
+            sleepFunc(self.barSize) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
         midpoint = self.recalcEMAs(dataStream)
         logging.info('before checks: %s', self)
@@ -236,10 +237,14 @@ class EMA:
             logging.info('midpoint fell below long ema, stopping watch')
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-        elif self.areWatching and self.long + 0.5 > self.short:
-            logging.info('distance between short and long EMAs inadequate')
-            self.areWatching = False
-            self.countOfCrossedIntervals = 0
+#        elif self.areWatching and self.long + 0.5 > self.short:
+#            logging.info('distance between short and long EMAs inadequate')
+#            self.areWatching = False
+#            self.countOfCrossedIntervals = 0
+#        elif self.areWatching and self.short + 0.5 > midpoint:
+#            logging.info('distance between short and long EMAs inadequate')
+#            self.areWatching = False
+#            self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
             logging.info('state just changed to uncrossed, stopping watch')
             self.areWatching = False
@@ -247,16 +252,20 @@ class EMA:
         elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
             logging.info('state just changed to crossed, starting to watch')
             self.areWatching = True
-            self.countOfCrossedIntervals = 0
+            self.countOfCrossedIntervals = 1
         elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        hi, lo = self.wContract.realtimeHiLo()
+        hi, lo = None, None
+        if not self.backTest:
+            hi, lo = self.wContract.realtimeHiLo()
+        else:
+            hi, lo = dataStream[self.curEmaIndex].high, dataStream[self.curEmaIndex].low
         hiLoSpread = hi-lo
         midLoSpread = midpoint-lo
         logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, midLoSpread: {}, hiLoSpread: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, midLoSpread, hiLoSpread, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
     
-        if self.areWatching and self.countOfCrossedIntervals > self.watchCount:
+        if self.areWatching and self.countOfCrossedIntervals >= self.watchCount:
             self.areWatching = False
             self.countOfCrossedIntervals = 0
             logging.info('returning a buy {}'.format(self))

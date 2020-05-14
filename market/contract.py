@@ -140,6 +140,9 @@ class wContract:
                     lo = self.bars[i].low
         return hi, lo
 
+    def realtimeMidpoint(self):
+        return self.bars[-1].close
+
     def updatePnl(self, account):
         pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)
         if len(pnlR) != 1:

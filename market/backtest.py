@@ -32,7 +32,7 @@ def setupThreeBar(dataStream, period):
     return index+3, dataStore
 
 def backtest(wc, dataStream, dataStore, conf, period):
-    totals = {'gl': 0, 'tf': 0, 'mf': 0, 'op': 0}
+    totals = {'gl': 0, 'tf': 0, 'mf': 0, 'op': 0, 'lo': 0}
     positions = []
     startIndex = None
     # which data point in the dataStream/bar set to evaluate on this round about enter or not
@@ -65,10 +65,10 @@ def backtest(wc, dataStream, dataStore, conf, period):
                 orders = order.CreateBracketOrder(od)
                 # need to use real values (not offsets) for position checker
                 if orders.stopOrder.orderType == 'TRAIL': # have to store for position tracking
-                    if od.config.stopPercent:
+                    if od.config.stopPercent is not None:
                         orders.stopOrder.auxPrice = order.Round( orders.entryOrder.lmtPrice *(100.0 - orders.stopOrder.trailingPercent)/100.0, od.wContract.priceIncrement)
                     elif od.config.stopTarget:
-                        orders.stopOrder.auxPrice = orders.entryOrder.lmtPrice - orderDetails.config.stopTarget
+                        orders.stopOrder.auxPrice = orders.entryOrder.lmtPrice - od.config.stopTarget
                 if conf.detector == 'threeBarPattern':
                     orders, amount = checkTradeExecution(dataStore.third, orders)
                 elif conf.detector == 'emaCrossover':
@@ -98,7 +98,8 @@ def backtest(wc, dataStream, dataStore, conf, period):
 # eg this is an unknown because we aren't analyzing by-second data
 def checkTradeExecution(bar, orders):
     if orders.entryOrder.lmtPrice <= bar.high and orders.stopOrder.auxPrice >= bar.low:
-        return None, (orders.stopOrder.auxPrice - orders.entryOrder.lmtPrice)
+        amount = (orders.stopOrder.auxPrice - orders.entryOrder.lmtPrice) *orders.entryOrder.totalQuantity
+        return None, amount
     else:
         return orders, None
 
@@ -121,10 +122,10 @@ def checkPositions(wc, positions, conf, dataStore, dataStream, index, totals):
         elif not closed and position.stopOrder.orderType == 'TRAIL':
             closePrice = dataStream[index].close
             if closePrice > position.entryOrder.lmtPrice:
-                if position.stopOrder.trailingPercent:
+                if conf.stopPercent is not None:
                     position.stopOrder.auxPrice = order.Round( closePrice * (100.0 - position.stopOrder.trailingPercent)/100.0, wc.priceIncrement)
                 elif conf.stopTarget:
-                    position.stopOrder.auxPrice = order.Round( closePrice - conf.stopTarget)
+                    position.stopOrder.auxPrice = order.Round( closePrice - conf.stopTarget, wc.priceIncrement)
         #else position stays, no changes
     return positions, totals
 

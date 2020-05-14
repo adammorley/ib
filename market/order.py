@@ -137,7 +137,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.stopOrder.outsideRth = orderDetails.config.exitOutsideRth
     if orderDetails.config.trail:
         orders.stopOrder.orderType = 'TRAIL'
-        if orderDetails.config.stopPercent:
+        if orderDetails.config.stopPercent is not None:
             orders.stopOrder.trailingPercent = orderDetails.config.stopPercent
         elif orderDetails.config.stopTarget:
             orders.stopOrder.auxPrice = orderDetails.config.stopTarget
