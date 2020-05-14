@@ -109,7 +109,7 @@ def determineDirection(od):
 # order matters, see class note
 def CreateBracketOrder(orderDetails, account=None):
     qty = calculateQty(orderDetails)
-    entryDirection, exitDirection = determineDirection(orderDetails)
+    entryAction, exitAction = determineDirection(orderDetails)
     orders = BracketOrder()
 
     orders.entryOrder = Order()
