@@ -234,14 +234,6 @@ class EMA:
             logging.info('midpoint fell below long ema, stopping watch')
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-#        elif self.areWatching and self.long + 0.5 > self.short:
-#            logging.info('distance between short and long EMAs inadequate')
-#            self.areWatching = False
-#            self.countOfCrossedIntervals = 0
-#        elif self.areWatching and self.short + 0.5 > midpoint:
-#            logging.info('distance between short and long EMAs inadequate')
-#            self.areWatching = False
-#            self.countOfCrossedIntervals = 0
         elif self.areWatching and self.stateChanged and not self.shortEMAoverLongEMA: # watching for consistent crossover, didn't get it
             logging.info('state just changed to uncrossed, stopping watch')
             self.areWatching = False
