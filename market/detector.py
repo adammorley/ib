@@ -1,4 +1,4 @@
-# functions to detect changes which indicate a buy point for various securities
+# functions to detect changes which indicate an entry point for various securities
 import datetime
 import logging
 import math
@@ -116,7 +116,7 @@ class EMA:
     wContract: wContract
     short: float = 0
     long_: float = 0
-    isCrossed: bool = None
+    shortEMAoverLongEMA: bool = None
     previousState: bool = None
     stateChanged: bool = None
     areWatching: bool = None
@@ -150,13 +150,13 @@ class EMA:
         return ','.join(pieces)
 
     def update(self, short, long_):
-        if self.isCrossed is not None:
-            self.previousState = self.isCrossed
+        if self.shortEMAoverLongEMA is not None:
+            self.previousState = self.shortEMAoverLongEMA
         self.short = short
         self.long = long_
-        self.isCrossed = True if self.short > self.long else False
-        if self.isCrossed is not None and self.previousState is not None:
-            if self.isCrossed != self.previousState:
+        self.shortEMAoverLongEMA = True if self.short > self.long else False
+        if self.shortEMAoverLongEMA is not None and self.previousState is not None:
+            if self.shortEMAoverLongEMA != self.previousState:
                 self.stateChanged = True
             else:
                 self.stateChanged = False
@@ -218,12 +218,12 @@ class EMA:
         self.update(short, long_)
         return midpoint
 
-    # the rules for buying:
+    # the rules for entry:
     #
-    #   if the short-term ema is above the long-term ema for n minutes where n > 15 after crossing
-    #   if the current interval's price drops below the long ema, do not enter (weak momo)
-    #   if the market opened less than 15 minutes ago, we're just going to ignore signals
-    def checkForBuy(self, dataStream, sleepFunc=None):
+    #   if the short-term ema crossed and is above the long-term ema for n (watchCount) intervals
+    #       can enter buy side
+    #       reverse is sell side
+    def checkForEntry(self, dataStream, sleepFunc=None):
         if not self.backTest:
             sleepFunc(self.barSize) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
@@ -241,21 +241,22 @@ class EMA:
 #            logging.info('distance between short and long EMAs inadequate')
 #            self.areWatching = False
 #            self.countOfCrossedIntervals = 0
-        elif self.areWatching and self.stateChanged and not self.isCrossed: # watching for consistent crossover, didn't get it
+        elif self.areWatching and self.stateChanged and not self.shortEMAoverLongEMA: # watching for consistent crossover, didn't get it
             logging.info('state just changed to uncrossed, stopping watch')
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-        elif not self.areWatching and self.stateChanged and self.isCrossed: # short crossed long, might be a buy, flag for re-inspection
+        elif not self.areWatching and self.stateChanged and self.shortEMAoverLongEMA: # short crossed long, might be a buy, flag for re-inspection
             logging.info('state just changed to crossed, starting to watch')
             self.areWatching = True
             self.countOfCrossedIntervals = 1
-        elif self.areWatching and not self.stateChanged and self.isCrossed: # watching, and it's staying set
+        elif self.areWatching and not self.stateChanged and self.shortEMAoverLongEMA: # watching, and it's staying set
             self.countOfCrossedIntervals += 1
         logging.info('after checks: %s', self)
-        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}; current state: areWatching: {}, isCrossed: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.isCrossed, self.stateChanged, self.countOfCrossedIntervals))
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}; current state: areWatching: {}, shortEMAoverLongEMA: {}, stateChanged: {}, countOfCrossedIntervals: {}'.format(self.short, self.long, midpoint, self.areWatching, self.shortEMAoverLongEMA, self.stateChanged, self.countOfCrossedIntervals))
     
         if self.areWatching and self.countOfCrossedIntervals >= self.watchCount:
             self.areWatching = False
             self.countOfCrossedIntervals = 0
-            logging.info('returning a buy {}'.format(self))
-            return midpoint # buyPrice
+            logging.info('returning an entry {}'.format(self))
+            direction = 'BUY'
+            return direction, midpoint # direction of entry, entryPrice
