@@ -125,7 +125,10 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
     if conf.detector == 'threeBarPattern':
         entryPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
     elif conf.detector == 'emaCrossover':
-        entryPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
+        try:
+            entryPrice = dataStore.checkForBuy(dataStream, ibc.sleep)
+        except Exception as e:
+            fatal.errorAndExit('got an exception while running waitloop: {}'.format(e))
 
     orderDetails = None
     if entryPrice is not None:
