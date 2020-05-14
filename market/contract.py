@@ -21,7 +21,7 @@ class wContract:
     priceIncrement: float
     ibClient: IB
     pnl: PnLSingle
-    bars: RealTimeBarList = None
+    midpointBars: RealTimeBarList = None
     def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
         self.localSymbol = localSymbol
@@ -117,22 +117,20 @@ class wContract:
             self.priceIncrement = self.marketRule[0].increment
 
     def realtimeBars(self):
-        if self.bars == None:
-            self.bars = self.ibClient.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
-            self.bars.updateEvent += self.realtimeBarsUpdate
+        if self.midpointBars == None:
+            self.midpointBars = self.ibClient.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
+            self.midpointBars.updateEvent += self.realtimeBarsUpdate
         else:
-            logging.warn('already running realtime bars.')
-    # keep just the last minute of bars
+            logging.warn('already running realtime midpointBars.')
+    # keep just the last minute of midpointBars
     def realtimeBarsUpdate(self, bb, new):
         if len(bb) > 12:
             for i in range(0, len(bb)-12):
                 bb.pop(i)
-    def realtimeBid(self):
-        return self.bars[-1].bid
     def realtimeLow(self):
-        return self.bars[-1].low
+        return self.midpointBars[-1].low
     def realtimeMidpoint(self):
-        return self.bars[-1].close
+        return self.midpointBars[-1].close
 
     def updatePnl(self, account):
         pnlR = self.ibClient.pnlSingle(account=account, conId=self.contract.conId)
