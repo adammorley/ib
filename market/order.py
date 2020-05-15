@@ -69,21 +69,40 @@ def Round(p, inc):
 
 def calculateProfitPrice(od, entryAction=None):
     if od.config.percents:
-        return od.entryPrice * (100.0 + od.config.profitPercent)/100.0
+        if entryAction == 'BUY':
+            return od.entryPrice * (100.0 + od.config.profitPercent)/100.0
+        else:
+            return od.entryPrice * (100.0 - od.config.profitPercent)/100.0
     else:
-        return od.entryPrice + od.config.profitTarget
+        if entryAction == 'BUY':
+            return od.entryPrice + od.config.profitTarget
+        else:
+            return od.entryPrice - od.config.profitTarget
 
 def calculateDayPrice(od, entryAction=None):
     if od.config.percents:
-        return od.entryPrice * (100.0 + od.config.dayPercent)/100.0
+        if entryAction == 'BUY':
+            return od.entryPrice * (100.0 + od.config.dayPercent)/100.0
+        else:
+            return od.entryPrice * (100.0 - od.config.dayPercent)/100.0
     else:
-        return od.entryPrice + od.config.dayTarget
+        if entryAction == 'BUY':
+            return od.entryPrice + od.config.dayTarget
+        else:
+            return od.entryPrice - od.config.dayTarget
+
 
 def calculateStopPrice(od, entryAction=None):
     if od.config.percents:
-        return od.entryPrice * (100.0 - od.config.stopPercent)/100.0
+        if entryAction == 'BUY':
+            return od.entryPrice * (100.0 - od.config.stopPercent)/100.0
+        else:
+            return od.entryPrice * (100.0 + od.config.stopPercent)/100.0
     else:
-        return od.entryPrice - od.config.stopTarget
+        if entryAction == 'BUY':
+            return od.entryPrice - od.config.stopTarget
+        else:
+            return od.entryPrice + od.config.stopTarget
 
 # drops decimal, only whole units
 def calculateQty(od):

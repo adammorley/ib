@@ -45,12 +45,12 @@ def close(ibc, wc=None):
 def ping():
     ibc = IB()
     try:
-        ibc.connect("localhost", port=getPort(False), clientId=rand.Int())
+        ibc.connect("localhost", port=getPort(False), clientId=rand.Int(), timeout=1)
         ibc.disconnect()
     except ConnectionRefusedError:
         logging.error('could not connect to dev/paper')
     try:
-        ibc.connect("localhost", port=getPort(True), clientId=rand.Int())
+        ibc.connect("localhost", port=getPort(True), clientId=rand.Int(), timeout=1)
         ibc.disconnect()
     except ConnectionRefusedError:
         logging.error('could not connect to prod')
