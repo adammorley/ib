@@ -8,13 +8,13 @@ from market.config import Config
 class OrderDetails:
     entryPrice: float = None # converts to Decimal during order creation
     config: Config
-    direction: str
+    entryAction: str
     wContract: wContract
 
-    def __init__(self, entryPrice, config, wContract, direction='BUY'):
+    def __init__(self, entryPrice, config, wContract, entryAction):
         self.entryPrice = entryPrice
         self.config = config
-        self.direction = direction
+        self.entryAction = entryAction
         self.wContract = wContract
 
     def __repr__(self):
@@ -93,29 +93,28 @@ def calculateQty(od):
         return od.config.qty
 
 def determineDirection(od):
-    if od.direction != 'BUY' and od.direction != 'SELL':
-        fatal.fatal(od.config, 'direction makes no sense {}'.format(od.direction))
-    entryAction = od.direction
+    if od.entryAction != 'BUY' and od.entryAction != 'SELL':
+        fatal.fatal(od.config, 'entryAction makes no sense {}'.format(od.entryAction))
     exitAction = None
-    if entryAction == 'BUY':
+    if od.entryAction == 'BUY':
         exitAction = 'SELL'
-    elif entryAction == 'SELL':
+    elif od.entryAction == 'SELL':
         exitAction = 'BUY'
     if exitAction is None:
         fatal.fatal(od.config, 'unclear action in order: {} {}'.format(entryAction, exitAction))
-    return entryAction, exitAction
+    return exitAction
 
 # note: https://interactivebrokers.github.io/tws-api/bracket_order.html
 # order matters, see class note
 def CreateBracketOrder(orderDetails, account=None):
     qty = calculateQty(orderDetails)
-    entryAction, exitAction = determineDirection(orderDetails)
+    exitAction = determineDirection(orderDetails)
     orders = BracketOrder()
 
     orders.entryOrder = Order()
     orders.entryOrder.account = account
     orders.entryOrder.transmit = False
-    orders.entryOrder.action = entryAction
+    orders.entryOrder.action = orderDetails.entryAction
     orders.entryOrder.totalQuantity = qty
     orders.entryOrder.orderType = 'LMT'
     orders.entryOrder.lmtPrice = Round(orderDetails.entryPrice, orderDetails.wContract.priceIncrement)

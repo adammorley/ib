@@ -242,6 +242,9 @@ class EMA:
         elif self.count > 0 and self.entryAction == 'SELL' and self.prevMidpoint is not None and midpoint >= self.prevMidpoint:
             logging.info('weak momentum signal, midpoints crossing')
             self.count = 0
+        elif self.count > 0 and self.entryAction == 'BUY' and self.long + 0.125 > self.short:
+            logging.info('not enough momentum, short and long too close.')
+            self.count = 0
         elif self.stateChanged:
             self.count = 1
             if self.shortEMAoverLongEMA:
@@ -256,8 +259,6 @@ class EMA:
         logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, prevMidpoint: {}; states: count: {}, entryAction: {}, shortEMAoverLongEMA: {}, stateChanged: {}'.format(self.short, self.long, midpoint, self.prevMidpoint, self.count, self.entryAction, self.shortEMAoverLongEMA, self.stateChanged))
         self.prevMidpoint = midpoint
 
-        if self.entryAction == 'SELL':
-            return None, None
         if self.count >= self.watchCount:
             self.count = 0
             logging.info('returning an entry at {} on side {}'.format(midpoint, self.entryAction))
