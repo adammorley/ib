@@ -100,20 +100,20 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
     if totalTrades >= conf.totalTrades:
         logging.warn('completed total number of trades {}/{}, exiting'.format(totalTrades, conf.totalTrades))
         break
-    elif not date.isMarketOpen( date.parseOpenHours(wc.details) ):
+    elif not date.isMarketOpen(wc.details):
         logging.warn('market closed, waiting for open')
         ibc.sleep(60 * 5)
         disableWatch(conf, dataStore)
         continue
-    elif not date.isMarketOpen(date.parseOpenHours(wc.details), date.nowInUtc() + timedelta(minutes=conf.greyzone)): # closing soon
+    elif not date.isMarketOpen(wc.details, date.nowInUtc() + timedelta(minutes=conf.greyzone)): # closing soon
         logging.warn('market closing soon, waiting for close')
-        sleepMins = (date.marketNextCloseTime(date.parseOpenHours(wc.details)) - date.nowInUtc()).total_seconds() /60
+        sleepMins = (date.marketNextCloseTime(wc.details) - date.nowInUtc()).total_seconds() /60
         waitAndUpdateEMAs(ibc, sleepMins, dataStore, dataStream)
         disableWatch(conf, dataStore)
         continue
-    elif date.marketOpenedLessThan(date.parseOpenHours(wc.details), timedelta(minutes=conf.greyzone) ):
+    elif date.marketOpenedLessThan(wc.details, timedelta(minutes=conf.greyzone)):
         logging.warn('market just opened, waiting')
-        minutesOpen = (date.nowInUtc() - date.marketOpenedAt(date.parseOpenHours(wc.details))).total_seconds() /60
+        minutesOpen = (date.nowInUtc() - date.marketOpenedAt(wc.details)).total_seconds() /60
         waitAndUpdateEMAs(ibc, (conf.greyzone-minutesOpen), dataStore, dataStream)
         disableWatch(conf, dataStore)
         continue

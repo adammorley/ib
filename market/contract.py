@@ -1,5 +1,6 @@
 import inspect
 import logging
+import re
 
 from ib_insync.contract import Contract
 from ib_insync.contract import ContractDetails
@@ -22,6 +23,7 @@ class wContract:
     ibClient: IB
     pnl: PnLSingle
     midpointBars: RealTimeBarList = None
+    bidBars: RealTimeBarList = None
     def __init__(self, ibc, symbol, localSymbol=None):
         self.symbol = symbol
         self.localSymbol = localSymbol
@@ -66,11 +68,18 @@ class wContract:
         if len(r) != 1 or r[0].contract != self.contract:
             fatal.errorAndExit('problem getting contract details: %s', r)
         self.details = r[0]
-        self.handleGlobexTimeZone()
+        self.handleDaylightSavings()
 
-    def handleGlobexTimeZone(self):
-        if self.contract.exchange == 'GLOBEX' and self.details.timeZoneId == 'America/Belize': # CME/GLOBEX is in chicago not belize.
+    def handleDaylightSavings(self):
+        # CME/GLOBEX is in chicago which observes daylight savings.
+        if self.contract.exchange == 'GLOBEX' and re.compile('^CST .*?').match(self.details.timeZoneId):
             self.details.timeZoneId = 'America/Chicago'
+        # and the nasdaq is on est/edt (new york time)
+        elif self.contract.primaryExchange == 'NASDAQ' and re.compile('^EST .*?').match(self.details.timeZoneId):
+            self.details.timeZoneId = 'America/New_York'
+        # and the lse is on bst/utc, aka london time
+        elif self.contract.primaryExchange == 'LSE' and re.compile('^BST .*?').match(self.details.timeZoneId):
+            self.details.timeZoneId = 'Europe/London'
 
     # high/low/open are for the day
     # sugget use realtime below
@@ -120,14 +129,19 @@ class wContract:
         if self.midpointBars == None:
             self.midpointBars = self.ibClient.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
             self.midpointBars.updateEvent += self.realtimeBarsUpdate
-        else:
-            logging.warn('already running realtime midpointBars.')
+        if self.bidBars == None:
+            self.bidBars = self.ibClient.reqRealTimeBars(self.contract, 5, 'BID', False)
+            self.bidBars.updateEvent += self.realtimeBarsUpdate
     # keep just the last minute of midpointBars
     def realtimeBarsUpdate(self, bb, new):
         if len(bb) > 12:
             for i in range(0, len(bb)-12):
                 bb.pop(i)
-    def realtimeLow(self):
+    def realtimeLowBid(self):
+        return self.bidBars[-1].low
+    def realtimeHighMidpoint(self):
+        return self.midpointBars[-1].high
+    def realtimeLowMidpoint(self):
         return self.midpointBars[-1].low
     def realtimeMidpoint(self):
         return self.midpointBars[-1].close

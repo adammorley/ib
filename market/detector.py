@@ -123,6 +123,7 @@ class EMA:
     entryAction: str = None
     prevMidpoint: float = None
     watchCount: int = 5 # barSizeSetting intervals
+    watchMidpoint: int # midpoint at start of watch
     shortInterval: int = 5
     longInterval: int = 20
     barSizeStr: str = None
@@ -229,24 +230,28 @@ class EMA:
             sleepFunc(self.barSize) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
         midpoint = self.recalcEMAs(dataStream)
+        lowMidpoint, highMidpoint = self.wContract.realtimeLowMidpoint(), self.wContract.realtimeHighMidpoint()
+        lowBid = self.wContract.realtimeLowBid()
         logging.info('before checks: %s', self)
         if self.count > 0 and self.entryAction == 'BUY' and midpoint < self.long:
-            logging.info('midpoint fell below long ema during buy watch, stopping watch')
+            logging.warn('midpoint fell below long ema during buy watch, stopping watch')
             self.count = 0
         elif self.count > 0 and self.entryAction == 'SELL' and midpoint > self.long:
-            logging.info('midpoint went above long ema during sell watch, stopping watch')
+            logging.warn('midpoint went above long ema during sell watch, stopping watch')
             self.count = 0
         elif self.count > 0 and self.entryAction == 'BUY' and self.prevMidpoint is not None and midpoint <= self.prevMidpoint:
-            logging.info('weak momentum signal, midpoints crossing')
+            logging.warn('weak momentum signal, midpoints crossing')
             self.count = 0
         elif self.count > 0 and self.entryAction == 'SELL' and self.prevMidpoint is not None and midpoint >= self.prevMidpoint:
-            logging.info('weak momentum signal, midpoints crossing')
+            logging.warn('weak momentum signal, midpoints crossing')
             self.count = 0
+        # FIXME: the below is really more of a "is the first order derivative for short higher than long?"
         elif self.count > 0 and self.entryAction == 'BUY' and self.long + 0.125 > self.short:
-            logging.info('not enough momentum, short and long too close.')
+            logging.warn('not enough momentum, short and long too close.')
             self.count = 0
         elif self.stateChanged:
             self.count = 1
+            self.watchMidpoint = midpoint
             if self.shortEMAoverLongEMA:
                 self.entryAction = 'BUY'
             else:
@@ -256,11 +261,18 @@ class EMA:
         else:
             self.count = 0
         logging.info('after checks: %s', self)
-        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, prevMidpoint: {}; states: count: {}, entryAction: {}, shortEMAoverLongEMA: {}, stateChanged: {}'.format(self.short, self.long, midpoint, self.prevMidpoint, self.count, self.entryAction, self.shortEMAoverLongEMA, self.stateChanged))
+        logging.warn('entryCalcs: shortEMA: {:.3f}/longEMA: {:.3f} using midpoint: {}, prevMidpoint: {}, lowBid: {}; states: count: {}, entryAction: {}, shortEMAoverLongEMA: {}, stateChanged: {}'.format(self.short, self.long, midpoint, self.prevMidpoint, lowBid, self.count, self.entryAction, self.shortEMAoverLongEMA, self.stateChanged))
         self.prevMidpoint = midpoint
 
-        if self.count >= self.watchCount:
+        if self.count > 0 and self.entryAction == 'SELL':
+            logging.warn('not entering sell side yet.')
             self.count = 0
-            logging.info('returning an entry at {} on side {}'.format(midpoint, self.entryAction))
-            return self.entryAction, midpoint # entryAction of entry, entryPrice
+            return None, None
+        if self.count == self.watchCount and self.entryAction == 'BUY' and self.watchMidpoint < midpoint:
+            self.count = 0
+            entryPrice = lowMidpoint if self.entryAction == 'BUY' else highMidpoint
+            logging.warn('returning an entry at {} on side {}'.format(entryPrice, self.entryAction))
+            return self.entryAction, entryPrice # entryAction of entry, entryPrice
+        elif self.count == self.watchCount and self.entryAction == 'BUY':
+            logging.warn('midpoint did not increase over lifespan of watch')
         return None, None

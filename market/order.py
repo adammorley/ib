@@ -67,7 +67,7 @@ def roundToTickSize(p, inc):
 def Round(p, inc):
     return convertToTwoDecimalsAsFloat( roundToTickSize(p, inc) )
 
-def calculateProfitPrice(od, entryAction=None):
+def calculateProfitPrice(od, entryAction):
     if od.config.percents:
         if entryAction == 'BUY':
             return od.entryPrice * (100.0 + od.config.profitPercent)/100.0
@@ -79,7 +79,7 @@ def calculateProfitPrice(od, entryAction=None):
         else:
             return od.entryPrice - od.config.profitTarget
 
-def calculateDayPrice(od, entryAction=None):
+def calculateDayPrice(od, entryAction):
     if od.config.percents:
         if entryAction == 'BUY':
             return od.entryPrice * (100.0 + od.config.dayPercent)/100.0
@@ -92,7 +92,7 @@ def calculateDayPrice(od, entryAction=None):
             return od.entryPrice - od.config.dayTarget
 
 
-def calculateStopPrice(od, entryAction=None):
+def calculateStopPrice(od, entryAction):
     if od.config.percents:
         if entryAction == 'BUY':
             return od.entryPrice * (100.0 - od.config.stopPercent)/100.0
@@ -139,7 +139,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.entryOrder.lmtPrice = Round(orderDetails.entryPrice, orderDetails.wContract.priceIncrement)
     orders.entryOrder.tif = 'DAY'
 
-    exitPrice = calculateProfitPrice(orderDetails)
+    exitPrice = calculateProfitPrice(orderDetails, orderDetails.entryAction)
     orders.exitOrder = Order()
     orders.exitOrder.account = account
     orders.exitOrder.transmit = False
@@ -151,7 +151,7 @@ def CreateBracketOrder(orderDetails, account=None):
     orders.exitOrder.outsideRth = orderDetails.config.exitOutsideRth
 
     if orderDetails.config.dayOrder:
-        dayPrice = calculateDayPrice(orderDetails)
+        dayPrice = calculateDayPrice(orderDetails, orderDetails.entryAction)
         orders.dayOrder = Order()
         orders.dayOrder.account = account
         orders.dayOrder.transmit = False
@@ -177,12 +177,12 @@ def CreateBracketOrder(orderDetails, account=None):
             orders.stopOrder.auxPrice = orderDetails.config.stopTarget
 
     else:
-        stopPrice = calculateStopPrice(orderDetails)
+        stopPrice = calculateStopPrice(orderDetails, orderDetails.entryAction)
         orders.stopOrder.orderType = 'STP'
         orders.stopOrder.auxPrice = Round(stopPrice, orderDetails.wContract.priceIncrement)
 
     orderDetails.entryPrice = orders.entryOrder.lmtPrice # for debugging clarity
-    logging.warn('created bracket orders: %s', orders)
+    logging.info('created bracket orders: %s', orders)
     return orders
 
 # https://www.interactivebrokers.com/en/?f=%2Fen%2Fgeneral%2Feducation%2Fpdfnotes%2FWN-UnderstandingIBMargin.php%3Fib_entity%3Din

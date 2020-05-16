@@ -38,6 +38,7 @@ class Config:
     totalTrades: int
     enterOutsideRth: bool
     exitOutsideRth: bool
+    liquidHoursOnly: bool # only use liquid (as opposed to trading hours) for watch
     greyzone: int # number of minutes before market close to not place new trades
     byPrice: bool
     dollarAmt: float
@@ -90,6 +91,7 @@ def ProcessConfig(conf, detectorOn=None):
     config.totalTrades = conf['totalTrades']
     config.enterOutsideRth = conf['enterOutsideRth']
     config.exitOutsideRth = conf['exitOutsideRth']
+    config.liquidHoursOnly = conf['liquidHoursOnly']
 
     if detectorOn:
         config.detector = conf['detector']

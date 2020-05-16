@@ -10,8 +10,11 @@ from market import fatal
 def nowInUtc():
     return datetime.utcnow().astimezone(pytz.utc)
 
+def highVolumeHours(cd):
+    return parseLiquidHours(cd.liquidHours, parseTimezone(cd.timezone) )
+
 # returns datetimerange of open hours for next month or so
-def parseOpenHours(cd):
+def openHours(cd):
     return parseTradingHours(cd.tradingHours, parseTimezone(cd.timeZoneId) )
 
 # parse the timezoneId
@@ -20,13 +23,12 @@ def parseTimezone(timeZoneId):
         fatal.errorAndExit('timeZoneId should be a string')
     return pytz.timezone(timeZoneId)
 
-# parse the contract details into datetime objects
-def parseTradingHours(tradingHours, tz):
-    if not isinstance(tradingHours, str):
+def parseIbHours(ibHours, tz):
+    if not isinstance(ibHours, str):
         fatal.errorAndExit('trading hours is a string')
     openHours = []
     # '20200427:0930-20200427:1600;20200428:0930-20200428:1600'
-    ranges = tradingHours.split(';')
+    ranges = ibHours.split(';')
     m = re.compile('.*:CLOSED')
     for range_ in ranges:
         if range_ == '':
@@ -35,7 +37,7 @@ def parseTradingHours(tradingHours, tz):
             continue
         ts = range_.split('-')
         if len(ts) != 2:
-            fatal.errorAndExit('only two timestamps per range: {}     {}'.format(ts, tradingHours))
+            fatal.errorAndExit('only two timestamps per range: {}     {}'.format(ts, ibHours))
         start = tz.localize(datetime.strptime(ts[0], '%Y%m%d:%H%M')).astimezone(pytz.utc)
         end = tz.localize(datetime.strptime(ts[1], '%Y%m%d:%H%M')).astimezone(pytz.utc)
         r = DateTimeRange(start, end)
@@ -44,6 +46,13 @@ def parseTradingHours(tradingHours, tz):
         openHours.append(r)
     logging.debug('openHours: %s', openHours)
     return openHours
+
+def parseLiquidHours(liquidHours, tz):
+    return parseIbHours(liquidHours, tz)
+
+# parse the contract details into datetime objects
+def parseTradingHours(tradingHours, tz):
+    return parseIbHours(tradingHours, tz)
 
 def createIntersectedRange(r0, r1):
     r = r0.intersection(r1)
@@ -74,7 +83,10 @@ def getNextOpenTime(r):
             return dt
     return None
 
-def isMarketOpen(r, dt=None):
+def isMarketOpen(cd, dt=None):
+    return _isMarketOpen(openHours(cd), dt)
+
+def _isMarketOpen(r, dt):
     if dt is None:
         dt = nowInUtc()
     for r_ in r:
@@ -82,7 +94,10 @@ def isMarketOpen(r, dt=None):
             return True
     return False
 
-def marketOpenedLessThan(r, td):
+def marketOpenedLessThan(cd, td=None):
+    return _marketOpenedLessThan(openHours(cd), td)
+
+def _marketOpenedLessThan(r, td):
     dt = nowInUtc()
     if len(r) < 2:
         fatal.errorAndExit('seems like this might not be a range')
@@ -93,7 +108,10 @@ def marketOpenedLessThan(r, td):
             return True
     return False
 
-def marketNextCloseTime(r):
+def marketNextCloseTime(cd):
+    return _marketNextCloseTime(openHours(cd))
+
+def _marketNextCloseTime(r):
     dt = nowInUtc()
     if len(r) < 2:
         fatal.errorAndExit('seem like this might not be a range')
@@ -102,7 +120,10 @@ def marketNextCloseTime(r):
             return r_.end_datetime
     fatal.errorAndExit('cannot find next close time {} {}'.format(dt, r))
 
-def marketOpenedAt(r):
+def marketOpenedAt(cd):
+    return _marketOpenedAt(openHours(cd))
+
+def _marketOpenedAt(r):
     dt = nowInUtc()
     if len(r) < 2:
         fatal.errorAndExit('seem like this might not be a range')
