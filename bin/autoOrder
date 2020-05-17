@@ -58,7 +58,7 @@ def outputIfHolding(wc):
 def waitAndUpdateEMAs(ibc, pauseMinutes, dataStore, dataStream):
     for p in (0, pauseMinutes):
         ibc.sleep(60)
-        dataStore.recalcEMAs(dataStream)
+        dataStore.recalcIndicators(dataStream)
 
 def disableWatch(conf, dataStore):
     if conf.detector == 'emaCrossover':

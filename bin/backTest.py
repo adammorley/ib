@@ -80,10 +80,10 @@ for p in [1]:#, 2, 4, 8]:
                         conf.profitTarget = pT
                         conf.stopTarget = sT
                         if conf.detector == 'emaCrossover':
-                            dataStore = detector.EMA(conf.barSizeStr, wc, sI, lI, w)
+                            dataStore = detector.Crossover(conf.barSizeStr, wc, sI, lI, w)
                             dataStore.backTest = True
                             dataStore.byPeriod = p
-                            dataStore.calcInitEMAs(dataStream)
+                            dataStore.initIndicators(dataStream)
                         totals = modTotals( backtest.backtest(wc, dataStream, dataStore, conf, p) )
                         r = totals['gl']/totals['mf']*100 if totals['mf'] > 0 else 0
                         if totals['gl'] > 0:

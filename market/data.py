@@ -66,10 +66,13 @@ def getHistData(wc, barSizeStr, longInterval, e='', d=None, t='MIDPOINT', r=Fals
 # end = len(histData)-1
 #
 # so using SMA for the ``first'' EMA is now possible and calculating the EMA at any given time is ok
-def calcSMA(interval, histData, startIndex):
+def calcSMA(interval, data, startIndex):
     sma = 0
     for i in range(startIndex, startIndex+interval):
-        sma += histData[i].close
+        try:
+            sma += data[i].close
+        except KeyError:
+            sma += histData[i]
     return sma/interval
 
 # exponential moving average (higher weighting recent data)

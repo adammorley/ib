@@ -49,16 +49,16 @@ def setupData(wc, conf, backtestArgs=None):
     if backtestArgs is not None:
         logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
         if conf.detector == 'emaCrossover':
-            dataStore = EMA(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
+            dataStore = Crossover(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
             dataStore.backTest = True
             dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
-            dataStore.calcInitEMAs(dataStream)
+            dataStore.initIndicators(dataStream)
         else:
             dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=backtestArgs['longInterval'], e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
     elif conf.detector == 'threeBarPattern':
         dataStream = wc.getTicker()
     elif conf.detector == 'emaCrossover':
-        dataStore = EMA(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
+        dataStore = Crossover(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
 
         # disable wrapper logging to hide the API error for canceling the data every hour
         logging.getLogger('ib_insync.wrapper').setLevel(logging.CRITICAL)
@@ -72,7 +72,7 @@ def setupData(wc, conf, backtestArgs=None):
         histData = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, r=useRth)
         if len(histData) < dataStore.longInterval *2:
             fatal.fatal(conf, 'did not get back the right amount of data from historical data call, perhaps broken?')
-        dataStore.calcInitEMAs(histData)
+        dataStore.initIndicators(histData)
         wc.realtimeBars()
     else:
         fatal.errorAndExit('do not know what to do!')
@@ -112,10 +112,14 @@ def threeBarPattern(barSet, ticker, sleepFunc):
 from market.contract import wContract
 # EMA tracks two expoential moving averages
 # a long and a short
-class EMA:
+class Crossover:
     wContract: wContract
     short: float = 0
     long_: float = 0
+    macd: float = 0
+    macdSignal: float = None
+    macdSignalValues: list
+    macdSize: int = 9 # default to nine period macd signal
     shortEMAoverLongEMA: bool = None
     previousState: bool = None
     stateChanged: bool = None
@@ -151,11 +155,14 @@ class EMA:
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
 
-    def update(self, short, long_):
+    def updateEmas(self, short, long_):
         if self.shortEMAoverLongEMA is not None:
             self.previousState = self.shortEMAoverLongEMA
         self.short = short
         self.long = long_
+        self.macd = short - long_
+        self.updateMacdSignalValues()
+        self.updateMacdSignal()
         self.shortEMAoverLongEMA = True if self.short > self.long else False
         if self.shortEMAoverLongEMA is not None and self.previousState is not None:
             if self.shortEMAoverLongEMA != self.previousState:
@@ -163,8 +170,23 @@ class EMA:
             else:
                 self.stateChanged = False
         logging.info('updated ema: %s', self)
+    def updateMacdSignalValues(self):
+        if self.macdSignal is None:
+            try:
+                self.macdSignalValues.append(self.macd)
+            except AttributeError:
+                self.macdSignalValues = []
+                self.macdSignalValues.append(self.macd)
+    # this is safe because historical data is used (of longInterval size) to track
+    # the initialization values.  if longInterval < 2*macdSize, might be off for
+    # the first few data points
+    def updateMacdSignal(self):
+        if self.macdSignal is None and len(self.macdSignalValues) == self.macdSize:
+            self.macdSignal = data.calcSMA(self.macdSize, self.macdSignalValues, 0)
+        elif self.macdSignal is not None:
+            self.macdSignal = data.calcEMA(self.macd, self.macdSignal, self.macdSize)
 
-    def calcInitEMAs(self, dataStream):
+    def initIndicators(self, dataStream):
         short = 0
         long_ = 0
         logging.info('datastream is {}'.format(len(dataStream)))
@@ -200,24 +222,23 @@ class EMA:
                 short = ema
             elif interval == self.longInterval:
                 long_ = ema
-        self.update(short, long_)
-
-    def recalcEMAs(self, dataStream):
+        self.updateEmas(short, long_)
+    def recalcIndicators(self, dataStream):
         midpoint = None
         if self.backTest:
             self.curEmaIndex = self.curEmaIndex + 1
             midpoint = dataStream[self.curEmaIndex].close
-            logging.info('recalculating emas at index {} using price of {}'.format(self.curEmaIndex, midpoint))
+            logging.info('recalculating indicators at index {} using price of {}'.format(self.curEmaIndex, midpoint))
         else:
             midpoint = self.wContract.realtimeMidpoint()
-            logging.info('recalculating emas using market midpoint of {}'.format(midpoint))
+            logging.info('recalculating indicators using market midpoint of {}'.format(midpoint))
 
         if math.isnan(midpoint):
             fatal.fatal('getting an NaN from midpoint call during open market conditions, do not know how to handle missing bid/ask during open hours {} {}'.format(midpoint, self.wContract.contract))
 
         short = data.calcEMA(midpoint, self.short, self.shortInterval)
         long_ = data.calcEMA(midpoint, self.long, self.longInterval)
-        self.update(short, long_)
+        self.updateEmas(short, long_)
         return midpoint
 
     # the rules for entry:
@@ -229,7 +250,7 @@ class EMA:
         if not self.backTest:
             sleepFunc(self.barSize) # if you change this, be sure to understand the call to data.getHistData and the p argument
 
-        midpoint = self.recalcEMAs(dataStream)
+        midpoint = self.recalcIndicators(dataStream)
         lowMidpoint, highMidpoint = self.wContract.realtimeLowMidpoint(), self.wContract.realtimeHighMidpoint()
         lowBid = self.wContract.realtimeLowBid()
         logging.info('before checks: %s', self)
