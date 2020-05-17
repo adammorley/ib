@@ -38,7 +38,7 @@ def backtest(wc, dataStream, dataStore, conf, period):
     # which data point in the dataStream/bar set to evaluate on this round about enter or not
     if conf.detector == 'threeBarPattern':
         startIndex, dataStore = setupThreeBar(dataStream, period)
-    elif conf.detector == 'emaCrossover':
+    elif conf.detector == 'Crossover':
         # FIXME: might be a bug here
         # we just stored (at init) the last EMA calculated, eg we are examining curClosePriceIndex
         startIndex = dataStore.curEmaIndex + 1
@@ -52,7 +52,7 @@ def backtest(wc, dataStream, dataStore, conf, period):
         entryAction, entryPrice = None, None
         if conf.detector == 'threeBarPattern':
             entryPrice = dataStore.analyze()
-        elif conf.detector == 'emaCrossover':
+        elif conf.detector == 'Crossover':
             entryAction, entryPrice = dataStore.checkForEntry(dataStream)
     
         if entryPrice is not None:
@@ -77,7 +77,7 @@ def backtest(wc, dataStream, dataStore, conf, period):
                             orders.stopOrder.auxPrice = orders.entryOrder.lmtPrice + od.config.stopTarget
                 if conf.detector == 'threeBarPattern':
                     orders, amount = checkTradeExecution(dataStore.third, orders)
-                elif conf.detector == 'emaCrossover':
+                elif conf.detector == 'Crossover':
                     orders, amount = checkTradeExecution(dataStream[dataStore.curEmaIndex+1], orders)
                 logging.warn('position config %s', od.config)
                 # check if the trade executed
@@ -122,7 +122,7 @@ def checkPositions(wc, positions, conf, dataStore, dataStream, index, totals):
         closed, amount = None, None
         if conf.detector == 'threeBarPattern':
             closed, amount = checkPosition(dataStore.third, position)
-        elif conf.detector == 'emaCrossover':
+        elif conf.detector == 'Crossover':
             closed, amount = checkPosition(dataStream[index], position)
 
         if closed:

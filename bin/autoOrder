@@ -61,7 +61,7 @@ def waitAndUpdateEMAs(ibc, pauseMinutes, dataStore, dataStream):
         dataStore.recalcIndicators(dataStream)
 
 def disableWatch(conf, dataStore):
-    if conf.detector == 'emaCrossover':
+    if conf.detector == 'Crossover':
         dataStore.areWatching = False
 
 def checkForExcessiveLosses(wc, conf):
@@ -121,7 +121,7 @@ while date.nowInUtc() < startTime + timedelta(hours=20):
     entryAction, entryPrice = None, None
     if conf.detector == 'threeBarPattern':
         entryPrice = detector.threeBarPattern(dataStore, dataStream, ibc.sleep)
-    elif conf.detector == 'emaCrossover':
+    elif conf.detector == 'Crossover':
         try:
             entryAction, entryPrice = dataStore.checkForEntry(dataStream, ibc.sleep)
         except Exception as e:

@@ -79,7 +79,7 @@ for p in [1]:#, 2, 4, 8]:
                         #logging.error('running %s', ID)
                         conf.profitTarget = pT
                         conf.stopTarget = sT
-                        if conf.detector == 'emaCrossover':
+                        if conf.detector == 'Crossover':
                             dataStore = detector.Crossover(conf.barSizeStr, wc, sI, lI, w)
                             dataStore.backTest = True
                             dataStore.byPeriod = p

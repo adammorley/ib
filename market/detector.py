@@ -48,7 +48,7 @@ def setupData(wc, conf, backtestArgs=None):
         dataStore = barSet = bars.BarSet()
     if backtestArgs is not None:
         logging.fatal('WARNING: DOING A BACKTEST, NOT USING LIVE DATA')
-        if conf.detector == 'emaCrossover':
+        if conf.detector == 'Crossover':
             dataStore = Crossover(conf.barSizeStr, wc, backtestArgs['shortInterval'], backtestArgs['longInterval'], backtestArgs['watchCount'])
             dataStore.backTest = True
             dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=dataStore.longInterval, e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
@@ -57,7 +57,7 @@ def setupData(wc, conf, backtestArgs=None):
             dataStream = data.getHistData(wc, barSizeStr=conf.barSizeStr, longInterval=backtestArgs['longInterval'], e=backtestArgs['e'], d=backtestArgs['d'], t=backtestArgs['t'], r=backtestArgs['r'], f=backtestArgs['f'], k=backtestArgs['k'])
     elif conf.detector == 'threeBarPattern':
         dataStream = wc.getTicker()
-    elif conf.detector == 'emaCrossover':
+    elif conf.detector == 'Crossover':
         dataStore = Crossover(conf.barSizeStr, wc, conf.shortEMA, conf.longEMA, conf.watchCount)
 
         # disable wrapper logging to hide the API error for canceling the data every hour
@@ -155,7 +155,7 @@ class Crossover:
             pieces.append('{}:{}'.format(k, v))
         return ','.join(pieces)
 
-    def updateEmas(self, short, long_):
+    def updateIndicators(self, short, long_):
         if self.shortEMAoverLongEMA is not None:
             self.previousState = self.shortEMAoverLongEMA
         self.short = short
@@ -222,7 +222,7 @@ class Crossover:
                 short = ema
             elif interval == self.longInterval:
                 long_ = ema
-        self.updateEmas(short, long_)
+        self.updateIndicators(short, long_)
     def recalcIndicators(self, dataStream):
         midpoint = None
         if self.backTest:
@@ -238,7 +238,7 @@ class Crossover:
 
         short = data.calcEMA(midpoint, self.short, self.shortInterval)
         long_ = data.calcEMA(midpoint, self.long, self.longInterval)
-        self.updateEmas(short, long_)
+        self.updateIndicators(short, long_)
         return midpoint
 
     # the rules for entry:

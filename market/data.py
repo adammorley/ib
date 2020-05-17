@@ -71,7 +71,7 @@ def calcSMA(interval, data, startIndex):
     for i in range(startIndex, startIndex+interval):
         try:
             sma += data[i].close
-        except KeyError:
+        except (AttributeError, KeyError):
             sma += histData[i]
     return sma/interval
 

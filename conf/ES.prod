@@ -18,7 +18,7 @@ totalTrades: 1
 enterOutsideRth: true # ib is weird
 exitOutsideRth: true # ib is weird
 greyzone: 30
-detector: emaCrossover
+detector: Crossover
 longEMA: 20
 shortEMA: 5
 watchCount: 5
