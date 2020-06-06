@@ -1,0 +1,26 @@
+---
+account: U4027822
+prod: true
+tradingMode: live
+symbol: ES
+localSymbol: ESM0
+percents: false
+profitTarget: 2
+stopTarget: 2
+dayOrder: false
+trail: false
+byPrice: false
+bufferAmt: 5000
+maxLoss: 1000
+qty: 1
+openPositions: 1
+totalTrades: 2
+enterOutsideRth: false # liquid hours only
+exitOutsideRth: false # liquid hours only
+liquidHoursOnly: true # treat the non-liquid hours as closed
+greyzone: 30
+detector: Crossover
+longEMA: 200
+shortEMA: 5
+watchCount: 3
+barSizeStr: '5 secs'

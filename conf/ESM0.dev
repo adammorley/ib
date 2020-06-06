@@ -1,0 +1,26 @@
+---
+account: DU2101955
+prod: false
+tradingMode: paper
+symbol: ES
+localSymbol: ESM0
+percents: false
+profitTarget: 2
+stopTarget: 2
+dayOrder: false
+trail: false
+byPrice: false
+bufferAmt: 30000
+maxLoss: 10000
+qty: 3
+openPositions: 3
+totalTrades: 99999
+enterOutsideRth: true # ib is weird
+exitOutsideRth: true # ib is weird
+liquidHoursOnly: false
+greyzone: 30
+detector: Crossover
+longEMA: 200
+shortEMA: 5
+watchCount: 4
+barSizeStr: '5 secs'

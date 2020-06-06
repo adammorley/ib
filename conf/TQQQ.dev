@@ -1,0 +1,23 @@
+---
+account: DU2101955
+prod: false
+tradingMode: paper
+symbol: TQQQ
+localSymbol: TQQQ
+percents: true
+profitPercent: 4
+stopPercent: 2
+dayOrder: true
+dayPercent: 2
+trail: true
+byPrice: true
+dollarAmt: 10000
+openPositions: 2
+bufferAmt: 30000
+maxLoss: 1000
+totalTrades: 9999999
+enterOutsideRth: false
+exitOutsideRth: true
+greyzone: 30
+detector: threeBarPattern
+barSizeStr: '1 min'
